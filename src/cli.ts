@@ -97,4 +97,30 @@ program
     }
   });
 
+program
+  .command('ui')
+  .description('Open the web dashboard')
+  .option('-p, --port <port>', 'port number', '5544')
+  .action(async (opts) => {
+    const { startDashboard } = await import('./api.js');
+    const port = parseInt(opts.port);
+    await startDashboard(port);
+    const url = `http://localhost:${port}`;
+    console.log(`kennel dashboard running at ${url}`);
+    const { execFile } = await import('node:child_process');
+    execFile('open', [url]);
+  });
+
+program
+  .command('server')
+  .description('Start the MCP server (stdio)')
+  .action(async () => {
+    await import('./server.js');
+  });
+
+// Default: run `list` if no command given
+if (process.argv.length <= 2) {
+  process.argv.push('list');
+}
+
 program.parse();
