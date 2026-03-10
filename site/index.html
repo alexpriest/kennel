@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kennel — where your daemons live</title>
+<meta name="description" content="Unified macOS service manager for launchd, PM2, Homebrew services, and cron. CLI + MCP server + web dashboard.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080a;
+    --bg-surface: #0f0f13;
+    --bg-raised: #16161c;
+    --border: #222230;
+    --text: #e8e8ec;
+    --text-dim: #9090a8;
+    --text-muted: #55556a;
+    --green: #22c55e;
+    --red: #ef4444;
+    --cyan: #06b6d4;
+    --magenta: #a855f7;
+    --amber: #f59e0b;
+    --blue: #3b82f6;
+    --accent: #22c55e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Nav */
+  nav {
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-github {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-github svg { width: 18px; height: 18px; fill: currentColor; }
+
+  /* Hero */
+  .hero {
+    padding: 100px 0 80px;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 32px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .hero-badge .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+  }
+
+  h1 {
+    font-size: clamp(48px, 8vw, 80px);
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+
+  h1 .dim { color: var(--text-muted); }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 520px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+
+  .hero-install {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s;
+    position: relative;
+  }
+
+  .hero-install:hover { border-color: var(--text-muted); }
+
+  .hero-install .prefix { color: var(--green); }
+
+  .hero-install .copy-hint {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .hero-install .copied {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border-radius: 8px;
+    color: var(--green);
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+
+  .hero-install .copied.show { opacity: 1; }
+
+  /* Terminal */
+  .terminal-wrapper {
+    max-width: 720px;
+    margin: 60px auto 0;
+    perspective: 800px;
+  }
+
+  .terminal {
+    background: #0c0c10;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 4px 24px rgba(0,0,0,0.4),
+      0 0 0 1px rgba(255,255,255,0.03) inset;
+    transform: rotateX(2deg);
+    transition: transform 0.4s ease;
+  }
+
+  .terminal:hover { transform: rotateX(0); }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px;
+    background: #0a0a0e;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .terminal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .terminal-dot.r { background: #ff5f57; }
+  .terminal-dot.y { background: #febc2e; }
+  .terminal-dot.g { background: #28c840; }
+
+  .terminal-title {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .terminal-body {
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    min-height: 280px;
+  }
+
+  .terminal-body .prompt { color: var(--green); }
+  .terminal-body .cmd { color: var(--text); }
+  .terminal-body .header { color: var(--text-muted); font-weight: 600; }
+  .terminal-body .running { color: var(--green); }
+  .terminal-body .stopped { color: var(--text-muted); }
+  .terminal-body .error { color: var(--red); }
+  .terminal-body .be-cyan { color: var(--cyan); }
+  .terminal-body .be-magenta { color: var(--magenta); }
+  .terminal-body .be-amber { color: var(--amber); }
+  .terminal-body .be-blue { color: var(--blue); }
+  .terminal-body .dim { color: var(--text-muted); }
+
+  .terminal-line {
+    opacity: 0;
+    animation: termLine 0.3s ease-out forwards;
+    white-space: pre;
+  }
+
+  @keyframes termLine {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Features */
+  .features {
+    padding: 100px 0;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .feature {
+    background: var(--bg-surface);
+    padding: 32px 28px;
+    transition: background 0.15s;
+  }
+
+  .feature:hover { background: var(--bg-raised); }
+
+  .feature:nth-child(1) { border-radius: 10px 0 0 0; }
+  .feature:nth-child(3) { border-radius: 0 10px 0 0; }
+  .feature:nth-child(4) { border-radius: 0 0 0 10px; }
+  .feature:nth-child(6) { border-radius: 0 0 10px 0; }
+
+  .feature-icon {
+    font-size: 24px;
+    margin-bottom: 16px;
+    display: block;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+  }
+
+  .feature-icon.green { background: rgba(34,197,94,0.1); color: var(--green); }
+  .feature-icon.cyan { background: rgba(6,182,212,0.1); color: var(--cyan); }
+  .feature-icon.magenta { background: rgba(168,85,247,0.1); color: var(--magenta); }
+  .feature-icon.amber { background: rgba(245,158,11,0.1); color: var(--amber); }
+  .feature-icon.blue { background: rgba(59,130,246,0.1); color: var(--blue); }
+  .feature-icon.red { background: rgba(239,68,68,0.1); color: var(--red); }
+
+  .feature h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .feature p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* Backends section */
+  .backends {
+    padding: 0 0 100px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .backend-pills {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .backend-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 12px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .backend-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .backend-pill .dot.cyan { background: var(--cyan); }
+  .backend-pill .dot.magenta { background: var(--magenta); }
+  .backend-pill .dot.amber { background: var(--amber); }
+  .backend-pill .dot.blue { background: var(--blue); }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  footer a {
+    color: var(--text-dim);
+    text-decoration: none;
+  }
+
+  footer a:hover { color: var(--text); }
+
+  @media (max-width: 768px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .feature { border-radius: 0 !important; }
+    .feature:first-child { border-radius: 10px 10px 0 0 !important; }
+    .feature:last-child { border-radius: 0 0 10px 10px !important; }
+    .hero { padding: 60px 0 40px; }
+    .terminal-body { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/" class="nav-logo">kennel</a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="https://github.com/alexpriest/kennel" class="nav-github" target="_blank">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge"><span class="dot"></span> v0.1.0</div>
+      <h1>where your<br><span class="dim">daemons</span> live</h1>
+      <p class="hero-sub">One command to see every background service on your Mac. Launchd agents, PM2 processes, Homebrew services, cron jobs — all in one view.</p>
+      <div class="hero-install" onclick="copyInstall()" id="install-box">
+        <span class="prefix">$</span>
+        <span>npm install -g kennel</span>
+        <span class="copy-hint">click to copy</span>
+        <span class="copied" id="copied-msg">copied!</span>
+      </div>
+
+      <div class="terminal-wrapper">
+        <div class="terminal">
+          <div class="terminal-bar">
+            <span class="terminal-dot r"></span>
+            <span class="terminal-dot y"></span>
+            <span class="terminal-dot g"></span>
+            <span class="terminal-title">kennel</span>
+          </div>
+          <div class="terminal-body" id="terminal"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="container">
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-icon green">*</div>
+          <h3>Unified View</h3>
+          <p>See launchd, PM2, brew, and cron services in one table. No more switching between 4 different commands.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon cyan">&#9881;</div>
+          <h3>Manage Services</h3>
+          <p>Start, stop, and restart services from any backend with a single consistent interface.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon magenta">&#9820;</div>
+          <h3>MCP Server</h3>
+          <p>Built-in MCP server lets AI assistants like Claude manage your services directly.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon amber">&#9676;</div>
+          <h3>Web Dashboard</h3>
+          <p>Visual status overview with live logs, expandable details, and one-click controls.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon red">&#9763;</div>
+          <h3>Health Checks</h3>
+          <p>Doctor command finds stale PIDs, missing executables, hardcoded secrets, and error states.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon blue">{ }</div>
+          <h3>JSON Output</h3>
+          <p>Every command supports <code>--json</code> for scripting. Pipe to jq, feed to other tools.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="backends">
+    <div class="container">
+      <div class="section-title">Supported Backends</div>
+      <div class="backend-pills">
+        <div class="backend-pill"><span class="dot cyan"></span> launchd</div>
+        <div class="backend-pill"><span class="dot magenta"></span> PM2</div>
+        <div class="backend-pill"><span class="dot amber"></span> Homebrew</div>
+        <div class="backend-pill"><span class="dot blue"></span> cron</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <a href="https://github.com/alexpriest/kennel">kennel</a> &middot; MIT License
+    </div>
+  </footer>
+
+<script>
+  function copyInstall() {
+    navigator.clipboard.writeText('npm install -g kennel');
+    const msg = document.getElementById('copied-msg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 1500);
+  }
+
+  // Terminal animation
+  const lines = [
+    { text: '$ kennel list', type: 'command' },
+    { text: '' },
+    { text: ' Name                          Backend  Status      PID    Schedule', type: 'header' },
+    { text: ' cloudflare-tunnel             launchd  ', s: '● running', sc: 'running', rest: '   1561   —' },
+    { text: ' imessage-attio                launchd  ', s: '○ stopped', sc: 'stopped', rest: '   —      every 1h' },
+    { text: ' syncthing                     brew     ', s: '● running', sc: 'running', rest: '   —      —' },
+    { text: ' textme                        pm2      ', s: '● running', sc: 'running', rest: '   57648  —' },
+    { text: ' daily-backup                  cron     ', s: '◷ scheduled', sc: 'stopped', rest: '  —      daily 2:00' },
+    { text: '' },
+    { text: '$ kennel doctor', type: 'command' },
+    { text: '' },
+    { text: ' ⚠ imessage-attio: Config may contain hardcoded secrets', type: 'error' },
+    { text: '   → Consider using environment variables instead', type: 'dim' },
+    { text: '' },
+    { text: ' ✓ 4 services healthy, 1 warning', type: 'running' },
+  ];
+
+  const terminal = document.getElementById('terminal');
+  let lineIndex = 0;
+
+  function renderLine() {
+    if (lineIndex >= lines.length) return;
+
+    const line = lines[lineIndex];
+    const el = document.createElement('div');
+    el.className = 'terminal-line';
+    el.style.animationDelay = '0ms';
+
+    if (line.type === 'command') {
+      el.innerHTML = '<span class="prompt">$ </span><span class="cmd">' + line.text.slice(2) + '</span>';
+    } else if (line.type === 'header') {
+      el.innerHTML = '<span class="header">' + line.text + '</span>';
+    } else if (line.type === 'running') {
+      el.innerHTML = '<span class="running">' + line.text + '</span>';
+    } else if (line.type === 'error') {
+      el.innerHTML = '<span class="error">' + line.text + '</span>';
+    } else if (line.type === 'dim') {
+      el.innerHTML = '<span class="dim">' + line.text + '</span>';
+    } else if (line.s) {
+      el.innerHTML = line.text + '<span class="' + line.sc + '">' + line.s + '</span><span class="dim">' + line.rest + '</span>';
+    } else {
+      el.textContent = line.text || '\u00A0';
+    }
+
+    terminal.appendChild(el);
+    lineIndex++;
+
+    const delay = line.type === 'command' ? 600 : line.text === '' ? 100 : 80;
+    setTimeout(renderLine, delay);
+  }
+
+  // Start animation when terminal scrolls into view
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      setTimeout(renderLine, 500);
+      observer.disconnect();
+    }
+  }, { threshold: 0.3 });
+
+  observer.observe(document.querySelector('.terminal'));
+</script>
+</body>
+</html>
