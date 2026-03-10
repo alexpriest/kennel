@@ -1,0 +1,34 @@
+{
+  "name": "kennel",
+  "version": "0.1.0",
+  "description": "Where your daemons live — unified macOS service manager for launchd, PM2, Homebrew services, and cron",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "kennel": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "server": "tsx src/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": ["macos", "launchd", "pm2", "homebrew", "cron", "service-manager", "mcp", "daemon"],
+  "author": "Alex Priest",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
+    "chalk": "^5.4.1",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.1.1"
+  }
+}
