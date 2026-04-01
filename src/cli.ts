@@ -36,6 +36,7 @@ program
   .description('List all services across all backends')
   .option('-b, --backend <type>', 'filter by backend (launchd, pm2, brew, cron)')
   .option('-s, --status <status>', 'filter by status (running, stopped, error, scheduled)')
+  .option('-a, --all', 'show all services (expand collapsed groups)')
   .option('--json', 'output as JSON')
   .action(async (opts) => {
     const services = await registry.listServices({
@@ -45,7 +46,7 @@ program
     if (opts.json) {
       console.log(JSON.stringify(services, null, 2));
     } else {
-      console.log(formatServiceTable(services));
+      console.log(formatServiceTable(services, { all: opts.all }));
     }
   });
 
