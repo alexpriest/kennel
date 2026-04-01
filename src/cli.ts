@@ -52,9 +52,34 @@ program
   .command('logs <service>')
   .description('Show recent logs for a service')
   .option('-n, --lines <n>', 'number of lines', '50')
+  .option('-f, --follow', 'follow log output (poll every 2s)')
   .action(async (name: string, opts) => {
     const logs = await registry.getLogs(name, parseInt(opts.lines));
     console.log(logs);
+
+    if (opts.follow) {
+      let lastLength = logs.length;
+      const poll = async () => {
+        const fresh = await registry.getLogs(name, parseInt(opts.lines));
+        if (fresh.length !== lastLength) {
+          const newContent = fresh.slice(lastLength);
+          if (newContent.trim()) {
+            process.stdout.write(newContent);
+          }
+          lastLength = fresh.length;
+        }
+      };
+
+      const interval = setInterval(poll, 2000);
+
+      process.on('SIGINT', () => {
+        clearInterval(interval);
+        process.exit(0);
+      });
+
+      // Keep process alive
+      await new Promise(() => {});
+    }
   });
 
 program
