@@ -2,11 +2,29 @@
 import { Command } from 'commander';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
-import { formatServiceTable, formatServiceInfo, formatDoctorResults } from './formatter.js';
+import { formatServiceTable, formatServiceInfo, formatDoctorResults, formatActionResult } from './formatter.js';
+import chalk from 'chalk';
 import type { BackendType, ServiceStatus } from './types.js';
 
 const program = new Command();
 const registry = new Registry();
+
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+function startSpinner(message: string): { stop: () => void } {
+  let i = 0;
+  process.stdout.write(`\r${chalk.dim(SPINNER_FRAMES[0])} ${message}`);
+  const timer = setInterval(() => {
+    i = (i + 1) % SPINNER_FRAMES.length;
+    process.stdout.write(`\r${chalk.dim(SPINNER_FRAMES[i])} ${message}`);
+  }, 80);
+  return {
+    stop() {
+      clearInterval(timer);
+      process.stdout.write('\r' + ' '.repeat(message.length + 4) + '\r');
+    },
+  };
+}
 
 program
   .name('kennel')
@@ -86,8 +104,10 @@ program
   .command('start <service>')
   .description('Start a service')
   .action(async (name: string) => {
+    const spinner = startSpinner(`Starting ${chalk.bold(name)}…`);
     const result = await registry.performAction(name, 'start');
-    console.log(result.message);
+    spinner.stop();
+    console.log(formatActionResult('start', name, result.success, result.message));
     if (!result.success) process.exit(1);
   });
 
@@ -95,8 +115,10 @@ program
   .command('stop <service>')
   .description('Stop a service')
   .action(async (name: string) => {
+    const spinner = startSpinner(`Stopping ${chalk.bold(name)}…`);
     const result = await registry.performAction(name, 'stop');
-    console.log(result.message);
+    spinner.stop();
+    console.log(formatActionResult('stop', name, result.success, result.message));
     if (!result.success) process.exit(1);
   });
 
@@ -104,8 +126,10 @@ program
   .command('restart <service>')
   .description('Restart a service')
   .action(async (name: string) => {
+    const spinner = startSpinner(`Restarting ${chalk.bold(name)}…`);
     const result = await registry.performAction(name, 'restart');
-    console.log(result.message);
+    spinner.stop();
+    console.log(formatActionResult('restart', name, result.success, result.message));
     if (!result.success) process.exit(1);
   });
 
