@@ -1,11 +1,52 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { exec } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { access, readFile, stat } from 'node:fs/promises';
+import { join, extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
 import { getDashboardHtml } from './dashboard.js';
 import { loadConfig, saveConfig, CLAUDE_DIR, ensureClaudeDir } from './config.js';
 import type { BackendType, ServiceStatus } from './types.js';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const UI_DIST = join(__dirname, '..', 'ui', 'dist');
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+};
+
+async function serveStaticFile(res: ServerResponse, filePath: string): Promise<boolean> {
+  try {
+    const s = await stat(filePath);
+    if (!s.isFile()) return false;
+    const ext = extname(filePath);
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const content = await readFile(filePath);
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(content);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function hasUiDist(): Promise<boolean> {
+  try {
+    const s = await stat(join(UI_DIST, 'index.html'));
+    return s.isFile();
+  } catch {
+    return false;
+  }
+}
 
 const registry = new Registry();
 
@@ -105,6 +146,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   }
 
   if (pathname === '/' && req.method === 'GET') {
+    // Serve Svelte UI if built, otherwise fall back to inline HTML
+    if (await hasUiDist()) {
+      await serveStaticFile(res, join(UI_DIST, 'index.html'));
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(getDashboardHtml());
     return;
@@ -218,6 +264,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
       json(res, { success: false, message: err.message });
     }
     return;
+  }
+
+  // Serve static files from ui/dist/ (CSS, JS, assets)
+  if (req.method === 'GET' && !pathname.startsWith('/api/')) {
+    const filePath = join(UI_DIST, pathname);
+    if (await serveStaticFile(res, filePath)) return;
   }
 
   json(res, { error: 'Not found' }, 404);
