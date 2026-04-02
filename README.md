@@ -2,11 +2,12 @@
 
 > Where your daemons live
 
-Unified macOS service manager for **launchd**, **PM2**, **Homebrew services**, and **cron** — CLI + MCP server + web dashboard.
+Unified macOS service manager for **launchd**, **PM2**, **Homebrew services**, and **cron** — CLI + MCP server + web dashboard + menu bar app.
 
-**npm:** `kennel` (available)
-**Domain:** `kennel.sh` (available)
+**npm:** `kennel`
+**Domain:** `kennel.sh`
 **Repo:** https://github.com/alexpriest/kennel
+**Project notes:** `~/Obsidian/alexpriest/Projects/Kennel/Status.md`
 
 ## Why
 
@@ -23,21 +24,23 @@ npm install -g kennel
 ```bash
 kennel                              # list all services (default command)
 kennel list                         # same as above
+kennel list --all                   # expand collapsed groups
 kennel list --backend pm2           # filter by backend
 kennel list --status running        # filter by status
 kennel list --json                  # JSON output for scripting
 
-kennel info <service>               # detailed service info
+kennel info <service>               # detailed service info (box-drawn card)
 kennel info imessage-attio          # partial name match works
 
 kennel logs <service>               # recent logs
+kennel logs <service> --follow      # live tail (polls every 2s)
 kennel logs <service> --lines 100   # specify line count
 
-kennel start <service>              # start a service
+kennel start <service>              # start a service (animated spinner)
 kennel stop <service>               # stop a service
 kennel restart <service>            # restart a service
 
-kennel doctor                       # health checks
+kennel doctor                       # health checks (box-drawn cards)
 kennel doctor --json                # JSON output
 
 kennel ui                           # open web dashboard (localhost:5544)
@@ -49,32 +52,47 @@ kennel server                       # start MCP server (stdio)
 ### Example output
 
 ```
-$ kennel list
- Name                            Backend   Status      PID     Schedule    Info
- com.alexpriest.imessage-attio   launchd   ○ stopped   -       every 1h    -
- com.cloudflare.cyrus-tunnel     launchd   ● running   1561    -           -
- syncthing                       brew      ● running   -       -           -
- textme                          pm2       ● running   57648   -           8 restarts
+kennel v0.2.0
 
-$ kennel doctor
-⚠ com.alexpriest.imessage-attio (launchd): Config file may contain hardcoded secrets
-  → Consider using environment variables or a keychain instead
+╭────────────────────────────────────────────────────────╮
+│ ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰               │
+│ ● 10 running   ○ 10 stopped   ? 2 unknown              │
+╰────────────────────────────────────────────────────────╯
+
+  ● Syncthing               brew      running    pid 1234
+  ● Cloudflare Tunnel        launchd   running    pid 1561
+  ● TextMe                   pm2       running    pid 57648  ↻ 8
+    … 7 more running
+  ○ iMessage Attio           launchd   stopped
+    … 9 more stopped
+  ? com.PM2                  launchd   unknown
 ```
 
 ## Web Dashboard
 
-`kennel ui` starts a local web server with:
-- Live service status table with colored status indicators
-- Click to expand: command, config path, cwd, log paths, exit code, restart count
-- Inline log viewer showing recent output
-- Start/stop/restart buttons for manageable services
-- Search and filter by backend
+`kennel ui` starts a Svelte-powered dashboard with:
+- Stacked bar chart + stats overview
+- Sortable service table with click-to-expand details
+- Inline log viewer, notes editor
+- Start/stop/restart controls
 - Health check panel
-- Auto-refreshes every 15 seconds
+- Claude integration (investigate services with AI)
+- Dark/light theme, keyboard navigation
+- Auto-refresh every 60 seconds
+
+## Menu Bar App (Tauri)
+
+Native macOS menu bar app wrapping the dashboard:
+- Tray icon with dropdown panel for quick service status
+- Full dashboard window for deeper investigation
+- Spawns API server as sidecar (or connects to existing)
+
+```bash
+npm run tauri:dev     # dev mode
+npm run tauri:build   # build .dmg
+```
 
 ## MCP Server
-
-Kennel includes an MCP server for use with Claude Code and other AI assistants.
 
 Add to `~/.claude.json`:
 
@@ -109,72 +127,35 @@ Add to `~/.claude.json`:
 | brew | `brew services list --json` | start/stop/restart | Thin wrapper around Homebrew services |
 | cron | `crontab -l` | read-only | Parses schedule into human-readable format |
 
-### Backend details
-
-- **launchd**: Parses plists via `plutil -convert json`. Gets status via `launchctl list`. Uses modern `launchctl bootstrap/bootout` for start/stop.
-- **PM2**: Checks `~/.pm2/pm2.pid` before calling to avoid starting the daemon as a side effect. Parses `pm2 jlist` JSON.
-- **brew**: Uses `brew services list --json` with fallback to text parsing. Deduplicates against launchd (brew services create launchd plists under `homebrew.mxcl.*`).
-- **cron**: Parses `crontab -l`. Read-only — no start/stop. Extracts meaningful names from commands.
-
-### Doctor checks
-
-- Stale PIDs (PID listed but process gone)
-- Missing executables (reads ProgramArguments from plist to handle paths with spaces)
-- Hardcoded secrets in plist config files (API keys, tokens, long hex strings)
-- Services in error state
-
 ## Architecture
 
 ```
-src/
-├── index.ts              # Library entry, exports public API
-├── cli.ts                # CLI entry (commander)
-├── server.ts             # MCP server (stdio transport)
-├── api.ts                # HTTP API server for dashboard
-├── dashboard.ts          # Embedded HTML dashboard
-├── types.ts              # Service, Backend, enums
-├── registry.ts           # Backend discovery, dedup, unified query
-├── formatter.ts          # CLI table output (chalk + cli-table3)
-├── doctor.ts             # Health checks
-└── backends/
-    ├── index.ts           # Re-exports + factory
-    ├── launchd.ts         # ~/Library/LaunchAgents plist parsing
-    ├── pm2.ts             # PM2 JSON API
-    ├── cron.ts            # crontab parsing
-    └── brew.ts            # brew services wrapper
-
-tests/
-├── registry.test.ts      # 7 tests (filtering, dedup, partial match, actions)
-└── doctor.test.ts        # 2 tests (error state, healthy services)
-
-site/
-└── index.html            # Landing page for kennel.sh
+src/                    # TypeScript backend (CLI, API, backends, MCP)
+ui/                     # Svelte 5 + Vite dashboard
+src-tauri/              # Tauri v2 menu bar app (Rust)
+site/                   # Landing page for kennel.sh
+docs/superpowers/       # Design spec + implementation plans
 ```
 
 ## Development
 
 ```bash
 npm install
-npm run build         # tsc
-npm run test          # vitest
-npm run dev -- list   # run CLI via tsx
-npm run dev -- ui     # run dashboard via tsx
+npm run build           # tsc (backend)
+npm test                # vitest
+
+cd ui && npm install
+npm run dev             # Vite dev server (localhost:5173)
+npm run build           # build to ui/dist/
+
+cd src-tauri
+cargo check             # verify Rust compiles
+cargo tauri dev         # run Tauri app in dev mode
 ```
 
 ## Status
 
-### Done
-- [x] Phase 1: CLI + MCP Server (all commands, all backends, doctor, tests)
-- [x] Phase 2: Web Dashboard (embedded HTML, API server, live refresh)
-- [x] Phase 3: Landing Page (static HTML in `site/`)
-
-### TODO before publishing to npm
-- [ ] Test `npm pack` / `npx kennel` end-to-end
-- [ ] Add shebang handling for `dist/cli.js` in build
-- [ ] Deploy landing page to kennel.sh (Cloudflare Pages or similar)
-- [ ] Add to Alex's `~/.claude.json` as MCP server
-- [ ] Consider: `--follow` flag for `kennel logs` (tail -f)
-- [ ] Consider: system-level LaunchDaemons (`/Library/LaunchDaemons/`)
+v0.2.0 — CLI redesign, Svelte dashboard, Tauri app, landing page. See `docs/superpowers/specs/2026-04-01-kennel-v02-design.md` for the full design spec.
 
 ## License
 
