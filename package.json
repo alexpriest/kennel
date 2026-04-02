@@ -7,6 +7,10 @@
   "bin": {
     "kennel": "dist/cli.js"
   },
+  "files": [
+    "dist",
+    "ui/dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",

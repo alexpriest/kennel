@@ -13,9 +13,18 @@
     config.update(c => ({ ...c, terminal: name }));
   }
 
+  let mounted = $state(false);
+
+  import { onMount } from 'svelte';
+  onMount(() => {
+    // Delay attaching click-outside so the opening click doesn't immediately close
+    requestAnimationFrame(() => { mounted = true; });
+  });
+
   function handleClickOutside(e: MouseEvent) {
+    if (!mounted) return;
     const target = e.target as HTMLElement;
-    if (!target.closest('.settings-panel')) {
+    if (!target.closest('.settings-panel') && !target.closest('.settings-anchor')) {
       onClose();
     }
   }

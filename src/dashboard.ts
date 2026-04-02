@@ -969,7 +969,7 @@ export function getDashboardHtml(): string {
 
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { closeClaude(); return; }
-    if (e.target.tagName === 'INPUT') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
     if (e.key === 'd' || e.key === 'D') { e.preventDefault(); toggleTheme(); }
   });
 
@@ -1035,9 +1035,17 @@ export function getDashboardHtml(): string {
     });
   }
 
+  function isEditing() {
+    var el = document.activeElement;
+    return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
+  }
+
   function fetchServices() {
     return fetch('/api/services').then(function(r) { return r.json(); }).then(function(d) {
-      services = d; renderServices(); updateStats();
+      services = d;
+      updateStats();
+      if (isEditing() || renameService) return;
+      updateServiceRows();
     });
   }
 
@@ -1249,6 +1257,67 @@ export function getDashboardHtml(): string {
     }
   }
 
+  function updateServiceRows() {
+    var wrap = document.getElementById('service-list');
+    var table = wrap.querySelector('.service-table');
+    if (!table) { renderServices(); return; }
+
+    var filtered = getFiltered();
+    var existingRows = wrap.querySelectorAll('tr.svc-row');
+    var existingNames = [];
+    existingRows.forEach(function(r) { existingNames.push(r.dataset.name); });
+    var newNames = filtered.map(function(s) { return s.name; });
+
+    // If the set of services or their order changed, do a full re-render
+    if (existingNames.length !== newNames.length || existingNames.some(function(n, i) { return n !== newNames[i]; })) {
+      renderServices();
+      return;
+    }
+
+    // Otherwise, update each row in-place
+    filtered.forEach(function(s) {
+      var row = wrap.querySelector('tr.svc-row[data-name="' + s.name + '"]');
+      if (!row) return;
+
+      // Update status indicator
+      var stripe = row.querySelector('.stripe');
+      if (stripe) { stripe.className = 'stripe ' + s.status; }
+
+      // Update name (only if not being renamed)
+      if (renameService !== s.name) {
+        var nameLine = row.querySelector('.name-line');
+        if (nameLine) {
+          var displayName = aliases[s.name] || friendlyName(s.name);
+          var en = esc(s.name);
+          nameLine.innerHTML = esc(displayName) + ' <button class="edit-btn" onclick="event.stopPropagation();startRename(\\'' + en + '\\')" title="Rename">' + SVG_EDIT + '</button>';
+        }
+      }
+
+      // Update status
+      var statusCell = row.querySelector('.td-status');
+      if (statusCell) { statusCell.innerHTML = '<span class="status-dot ' + s.status + '"></span>' + s.status; }
+
+      // Update PID
+      var pidCell = row.querySelector('.td-pid');
+      if (pidCell) { pidCell.textContent = s.pid || '\u2014'; }
+
+      // Update actions
+      var actionsCell = row.querySelector('.td-actions');
+      if (actionsCell) {
+        var en = esc(s.name);
+        var ah = '';
+        if (s.manageable && s.status === 'running') {
+          ah += '<button class="action-btn stop" onclick="event.stopPropagation();performAction(\\'' + en + '\\',\\'stop\\')">stop</button>';
+          ah += '<button class="action-btn" onclick="event.stopPropagation();performAction(\\'' + en + '\\',\\'restart\\')">restart</button>';
+        } else if (s.manageable && s.status !== 'running' && s.status !== 'scheduled') {
+          ah += '<button class="action-btn start" onclick="event.stopPropagation();performAction(\\'' + en + '\\',\\'start\\')">start</button>';
+        }
+        ah += '<button class="claude-btn" onclick="event.stopPropagation();launchClaude(\\'' + en + '\\')" title="Investigate with Claude">' + SVG_CLAUDE + '</button>';
+        actionsCell.innerHTML = ah;
+      }
+    });
+  }
+
   function kv(label, value) {
     if (!value) return '';
     return '<div class="detail-kv"><span class="detail-k">' + label + '</span><span class="detail-v" title="' + esc(value) + '">' + esc(value) + '</span></div>';
@@ -1337,6 +1406,8 @@ export function getDashboardHtml(): string {
     return f.replace(/[._-]+/g, ' ').replace(/\\b\\w/g, function(c) { return c.toUpperCase(); });
   }
 
+  var renameService = null;
+
   function startRename(serviceName) {
     var row = document.querySelector('tr[data-name="' + serviceName + '"]');
     if (!row) return;
@@ -1344,17 +1415,23 @@ export function getDashboardHtml(): string {
     var current = aliases[serviceName] || friendlyName(serviceName);
     cell.innerHTML = '<input class="rename-input" value="' + esc(current) + '" /><div class="service-id">' + esc(serviceName) + '</div>';
     var input = cell.querySelector('.rename-input');
+    renameService = serviceName;
     input.focus();
     input.select();
+    var committed = false;
     function commit() {
+      if (committed) return;
+      committed = true;
+      renameService = null;
       var val = input.value.trim();
       saveAlias(serviceName, val && val !== friendlyName(serviceName) ? val : '');
     }
     input.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') commit();
-      if (e.key === 'Escape') renderServices();
+      if (e.key === 'Enter') { input.blur(); }
+      if (e.key === 'Escape') { committed = true; renameService = null; renderServices(); }
     });
     input.addEventListener('blur', commit);
+    input.addEventListener('click', function(e) { e.stopPropagation(); });
   }
 
   function manualRefresh() {

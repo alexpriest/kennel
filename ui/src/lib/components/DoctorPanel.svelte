@@ -1,45 +1,39 @@
 <script lang="ts">
   import { doctorIssues, doctorLoading, refreshDoctor } from '../stores/doctor';
+  import { onMount } from 'svelte';
 
   let open = $state(false);
-  let loaded = $state(false);
 
-  async function toggle() {
-    open = !open;
-    if (open && !loaded) {
-      await refreshDoctor();
-      loaded = true;
-    }
-  }
+  onMount(() => {
+    refreshDoctor();
+  });
 </script>
 
 <div class="doctor-panel">
-  <button class="doctor-header" onclick={toggle}>
-    <span class="doctor-title">Doctor</span>
+  <button class="doctor-header" onclick={() => open = !open}>
+    <span class="doctor-title">health check</span>
     {#if $doctorLoading}
       <span class="doctor-badge issues">checking...</span>
-    {:else if loaded}
-      {#if $doctorIssues.length === 0}
-        <span class="doctor-badge clean">All clear</span>
-      {:else}
-        <span class="doctor-badge issues">{$doctorIssues.length} issue{$doctorIssues.length === 1 ? '' : 's'}</span>
-      {/if}
+    {:else if $doctorIssues.length === 0}
+      <span class="doctor-badge clean">healthy</span>
+    {:else}
+      <span class="doctor-badge issues">{$doctorIssues.length} issue{$doctorIssues.length === 1 ? '' : 's'}</span>
     {/if}
   </button>
   {#if open}
     <div class="doctor-results">
-      {#if $doctorIssues.length === 0 && loaded && !$doctorLoading}
-        <div class="doctor-clean">No issues found.</div>
+      {#if $doctorIssues.length === 0 && !$doctorLoading}
+        <div class="doctor-clean" style="color:var(--green);text-align:center;padding:16px;">all services look healthy</div>
       {/if}
-      {#each $doctorIssues as issue}
+      {#each $doctorIssues as issue, idx}
         <div class="doctor-issue">
           <span class="issue-icon {issue.severity}">
-            {#if issue.severity === 'error'}!
-            {:else if issue.severity === 'warning'}?
-            {:else}i{/if}
+            {#if issue.severity === 'error'}&#x2716;
+            {:else if issue.severity === 'warning'}&#x26A0;
+            {:else}&#x2139;{/if}
           </span>
           <div class="issue-body">
-            <div class="issue-service">{issue.service}</div>
+            <div class="issue-service">{issue.service} <span style="color:var(--text-muted)">({issue.backend})</span></div>
             <div class="issue-message">{issue.message}</div>
             {#if issue.suggestion}
               <div class="issue-suggestion">{issue.suggestion}</div>
@@ -94,13 +88,6 @@
 
   .doctor-results {
     border-top: 1px solid var(--border-subtle);
-  }
-
-  .doctor-clean {
-    padding: 16px;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 12px;
   }
 
   .doctor-issue {

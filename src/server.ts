@@ -9,7 +9,7 @@ const registry = new Registry();
 
 const server = new McpServer({
   name: 'kennel',
-  version: '0.1.0',
+  version: '0.2.0',
 }, {
   capabilities: { tools: {} },
 });

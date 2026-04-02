@@ -208,7 +208,7 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     line-height: 1.6;
-    color: var(--text-dim);
+    color: var(--text);
     resize: vertical;
     min-height: 56px;
     outline: none;
@@ -216,7 +216,7 @@
   }
 
   .notes-textarea::placeholder { color: var(--text-muted); }
-  .notes-textarea:focus { border-color: var(--text-dim); }
+  .notes-textarea:focus { border-color: var(--text-dim); outline: none; }
 
   .notes-saved {
     font-size: 10px;

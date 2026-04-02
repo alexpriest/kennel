@@ -1,6 +1,16 @@
 <script lang="ts">
-  import { filteredServices, loading } from '../stores/services';
+  import { filteredServices, loading, sortColumn, sortDirection, toggleSort } from '../stores/services';
+  import type { SortColumn } from '../stores/services';
   import ServiceRow from './ServiceRow.svelte';
+
+  function handleSort(col: SortColumn) {
+    toggleSort(col);
+  }
+
+  function sortIndicator(col: SortColumn): string {
+    if ($sortColumn !== col) return '';
+    return $sortDirection === 'asc' ? ' ▲' : ' ▼';
+  }
 </script>
 
 <div class="service-table-wrap">
@@ -25,16 +35,16 @@
       <thead>
         <tr>
           <th></th>
-          <th>Service</th>
-          <th>Backend</th>
-          <th>Status</th>
-          <th>PID</th>
-          <th>Schedule</th>
+          <th class="sortable" onclick={() => handleSort('name')}>Service{sortIndicator('name')}</th>
+          <th class="sortable" onclick={() => handleSort('backend')}>Backend{sortIndicator('backend')}</th>
+          <th class="sortable" onclick={() => handleSort('status')}>Status{sortIndicator('status')}</th>
+          <th class="sortable" onclick={() => handleSort('pid')}>PID{sortIndicator('pid')}</th>
+          <th class="sortable" onclick={() => handleSort('schedule')}>Schedule{sortIndicator('schedule')}</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {#each $filteredServices as service (service.name)}
+        {#each $filteredServices as service (`${service.backend}:${service.backendId}`)}
           <ServiceRow {service} />
         {/each}
       </tbody>
@@ -75,6 +85,14 @@
   }
 
   .service-table :global(thead th:first-child) { padding: 0; width: 3px; }
+
+  .sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.1s;
+  }
+
+  .sortable:hover { color: var(--text-dim); }
 
   .loading {
     display: flex;

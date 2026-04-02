@@ -77,15 +77,27 @@ program
     console.log(logs);
 
     if (opts.follow) {
-      let lastLength = logs.length;
+      let lastContent = logs;
       const poll = async () => {
         const fresh = await registry.getLogs(name, parseInt(opts.lines));
-        if (fresh.length !== lastLength) {
-          const newContent = fresh.slice(lastLength);
-          if (newContent.trim()) {
-            process.stdout.write(newContent);
+        if (fresh !== lastContent) {
+          // Find new lines by comparing from the end
+          const freshLines = fresh.split('\n');
+          const lastLines = lastContent.split('\n');
+          // Find where old content ends in new content
+          let overlap = 0;
+          for (let i = Math.min(lastLines.length, freshLines.length); i >= 0; i--) {
+            const tail = lastLines.slice(-i).join('\n');
+            if (fresh.startsWith(tail) || freshLines.slice(0, i).join('\n') === tail) {
+              overlap = i;
+              break;
+            }
           }
-          lastLength = fresh.length;
+          const newLines = freshLines.slice(overlap);
+          if (newLines.length > 0 && newLines.some(l => l.trim())) {
+            process.stdout.write(newLines.join('\n') + '\n');
+          }
+          lastContent = fresh;
         }
       };
 

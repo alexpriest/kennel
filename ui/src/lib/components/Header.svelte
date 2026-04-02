@@ -26,9 +26,7 @@
   <div class="header-controls">
     <span class="refresh-timer">{countdown}s</span>
     <button class="icon-btn" class:spinning={refreshing} onclick={handleRefresh} title="Refresh">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M2.5 8a5.5 5.5 0 0 1 9.3-3.95L14 2v4h-4l2.1-2.1A4 4 0 1 0 12 8"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     </button>
     <button class="icon-btn" onclick={toggleTheme} title="Toggle theme">
       {#if $theme === 'dark'}
@@ -39,7 +37,7 @@
     </button>
     <div class="settings-anchor">
       <button class="icon-btn" onclick={() => settingsOpen = !settingsOpen} title="Settings">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
       </button>
       {#if settingsOpen}
         <SettingsPanel onClose={() => settingsOpen = false} />

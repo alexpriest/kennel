@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { exec } from 'node:child_process';
 import { access, readFile, stat } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { join, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
@@ -75,10 +75,6 @@ function escapeForDoubleQuotes(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
 }
 
-function escapeForSingleQuotes(s: string): string {
-  return s.replace(/'/g, "'\\''");
-}
-
 function buildTerminalCommand(terminal: string, prompt: string, claudeDir: string): string {
   const safePrompt = prompt.replace(/'/g, "'\"'\"'");
   // cd into the kennel claude dir so all sessions are grouped
@@ -116,8 +112,13 @@ function buildTerminalCommand(terminal: string, prompt: string, claudeDir: strin
   }
 }
 
+function isLocalOrigin(req: IncomingMessage): boolean {
+  const origin = req.headers.origin ?? '';
+  return !origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+}
+
 function json(res: ServerResponse, data: unknown, status = 200) {
-  res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+  res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'http://localhost:5544' });
   res.end(JSON.stringify(data));
 }
 
@@ -137,11 +138,17 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': 'http://localhost:5544',
       'Access-Control-Allow-Methods': 'GET, POST',
       'Access-Control-Allow-Headers': 'Content-Type',
     });
     res.end();
+    return;
+  }
+
+  // Block cross-origin POST requests (CSRF protection)
+  if (req.method === 'POST' && !isLocalOrigin(req)) {
+    json(res, { error: 'Forbidden' }, 403);
     return;
   }
 
@@ -268,7 +275,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   // Serve static files from ui/dist/ (CSS, JS, assets)
   if (req.method === 'GET' && !pathname.startsWith('/api/')) {
-    const filePath = join(UI_DIST, pathname);
+    const filePath = resolve(join(UI_DIST, pathname));
+    if (!filePath.startsWith(resolve(UI_DIST))) {
+      json(res, { error: 'Forbidden' }, 403);
+      return;
+    }
     if (await serveStaticFile(res, filePath)) return;
   }
 

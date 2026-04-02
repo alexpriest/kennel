@@ -55,12 +55,25 @@ function divider(width: number): string {
 // ─── Stacked Bar Chart ───────────────────────────────────────────────
 
 function buildStackedBar(counts: Record<string, number>, total: number): string {
+  const activeStatuses = STATUS_ORDER.filter(s => (counts[s] ?? 0) > 0);
+  // First pass: proportional allocation
+  const rawBlocks: Record<string, number> = {};
+  let allocated = 0;
+  for (const status of activeStatuses) {
+    const blocks = Math.max(1, Math.round((counts[status] / total) * BAR_WIDTH));
+    rawBlocks[status] = blocks;
+    allocated += blocks;
+  }
+  // Clamp to BAR_WIDTH by trimming the largest segments
+  while (allocated > BAR_WIDTH && activeStatuses.length > 0) {
+    const largest = activeStatuses.reduce((a, b) => rawBlocks[a] > rawBlocks[b] ? a : b);
+    if (rawBlocks[largest] <= 1) break;
+    rawBlocks[largest]--;
+    allocated--;
+  }
   const segments: string[] = [];
-  for (const status of STATUS_ORDER) {
-    const count = counts[status] ?? 0;
-    if (count === 0) continue;
-    const blocks = Math.max(1, Math.round((count / total) * BAR_WIDTH));
-    segments.push(STATUS_COLORS[status]('▰'.repeat(blocks)));
+  for (const status of activeStatuses) {
+    segments.push(STATUS_COLORS[status]('▰'.repeat(rawBlocks[status])));
   }
   return segments.join('');
 }
@@ -155,7 +168,6 @@ export function formatServiceTable(services: Service[], options: { all?: boolean
   // Group by status and render
   let lastStatus: Service['status'] | null = null;
   let groupCount = 0;
-  let groupTotal = 0;
   let needsDivider = false;
 
   for (const svc of sorted) {
@@ -173,7 +185,6 @@ export function formatServiceTable(services: Service[], options: { all?: boolean
 
       lastStatus = svc.status;
       groupCount = 0;
-      groupTotal = sorted.filter(s => s.status === svc.status).length;
 
       if (svc.status === 'error') {
         needsDivider = true;
