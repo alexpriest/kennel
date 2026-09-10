@@ -1,11 +1,19 @@
-# kennel
+# Kennel
+
+One service manager for launchd, PM2, Homebrew services, and cron, so every background process on a Mac has one place to look.
+
+## Status
+
+Shipped — built and linked from a clone; not published to a package registry.
+
+## License
+
+Not licensed for reuse.
 
 > Where your daemons live
 
 Unified macOS service manager for **launchd**, **PM2**, **Homebrew services**, and **cron** — CLI + MCP server + web dashboard + menu bar app.
 
-**npm:** `kennel`
-**Domain:** `kennel.sh`
 **Repo:** https://github.com/alexpriest/kennel
 **Project notes:** `~/Obsidian/alexpriest/Projects/Kennel/Status.md`
 
@@ -15,8 +23,21 @@ macOS developers accumulate background services across 4+ different process mana
 
 ## Install
 
+Kennel is not published to a package registry. Build it from a clone:
+
 ```bash
-npm install -g kennel
+git clone https://github.com/alexpriest/kennel.git
+cd kennel
+npm install
+npm run build
+npm link          # puts `kennel` on your PATH
+```
+
+Or run it without linking:
+
+```bash
+npm run dev -- list      # tsx against src/
+node dist/cli.js list    # after npm run build
 ```
 
 ## CLI
@@ -133,7 +154,7 @@ Add to `~/.claude.json`:
 src/                    # TypeScript backend (CLI, API, backends, MCP)
 ui/                     # Svelte 5 + Vite dashboard
 src-tauri/              # Tauri v2 menu bar app (Rust)
-site/                   # Landing page for kennel.sh
+site/                   # Unshipped landing page
 docs/superpowers/       # Design spec + implementation plans
 ```
 
