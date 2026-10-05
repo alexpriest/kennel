@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import type { Service, DoctorIssue } from './types.js';
+import type { ScheduledTask, TaskStatus } from './scheduled.js';
 
 // ─── Constants ────────────────────────────────────────────────────────
 
@@ -323,4 +324,69 @@ export function formatActionResult(action: string, serviceName: string, success:
     const verb = action === 'start' ? 'start' : action === 'stop' ? 'stop' : 'restart';
     return `${chalk.red('✖')} Failed to ${verb} ${chalk.bold(serviceName)}: ${message}`;
   }
+}
+
+// ─── Scheduled Tasks ─────────────────────────────────────────────────
+
+const RUN_STATUS_STYLE: Record<TaskStatus, { icon: string; color: (s: string) => string }> = {
+  ok: { icon: '●', color: chalk.green },
+  failed: { icon: '✖', color: chalk.red },
+  running: { icon: '◐', color: chalk.cyan },
+  'never run': { icon: '○', color: chalk.gray },
+};
+
+function padAnsi(str: string, width: number): string {
+  return str + ' '.repeat(Math.max(0, width - stripAnsi(str).length));
+}
+
+function formatWhen(iso: string | null): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).replace(/,/g, '');
+  const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, '').toLowerCase();
+  return `${day} ${time}`;
+}
+
+function formatDuration(seconds: number | null): string {
+  if (seconds === null) return '—';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  return m < 60 ? `${m}m ${seconds % 60}s` : `${Math.floor(m / 60)}h ${m % 60}m`;
+}
+
+function formatCost(usd: number | null): string {
+  return usd === null ? '—' : `$${usd.toFixed(2)}`;
+}
+
+export function formatScheduledTable(tasks: ScheduledTask[]): string {
+  const lines: string[] = ['', chalk.bold('Scheduled tasks'), ''];
+  if (tasks.length === 0) {
+    lines.push(chalk.dim('  No scheduled tasks found in ~/Library/LaunchAgents.'), '');
+    return lines.join('\n');
+  }
+  const header = ['', 'Task', 'Schedule', 'Next run', 'Last run', 'Status', 'Time', 'Cost', 'Last 7'];
+  const widths = [1, 26, 18, 17, 17, 10, 8, 7, 7];
+  lines.push('  ' + header.map((h, i) => chalk.dim(h.padEnd(widths[i]))).join(' '));
+  for (const t of tasks) {
+    const style = RUN_STATUS_STYLE[t.status];
+    const recent = t.recent.map(s => RUN_STATUS_STYLE[s].color(RUN_STATUS_STYLE[s].icon)).join('') || chalk.dim('—');
+    const cells = [
+      style.color(style.icon),
+      t.name,
+      t.schedule,
+      formatWhen(t.nextRun),
+      formatWhen(t.lastRunStart),
+      style.color(t.status),
+      formatDuration(t.durationS),
+      formatCost(t.costUsd),
+      recent,
+    ];
+    lines.push('  ' + cells.map((c, i) => padAnsi(c, widths[i])).join(' '));
+    if (t.error) lines.push('    ' + chalk.red(`↳ ${t.error}`));
+  }
+  const spend = tasks.reduce((sum, t) => sum + (t.costUsd ?? 0), 0);
+  const failed = tasks.filter(t => t.status === 'failed').length;
+  lines.push('', chalk.dim(`  ${tasks.length} task${tasks.length === 1 ? '' : 's'} · ${failed} failed · last-run cost ${formatCost(spend)}`), '');
+  return lines.join('\n');
 }

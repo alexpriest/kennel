@@ -64,6 +64,9 @@ kennel restart <service>            # restart a service
 kennel doctor                       # health checks (box-drawn cards)
 kennel doctor --json                # JSON output
 
+kennel scheduled                    # scheduled agent tasks: schedule, next run, last result, cost
+kennel scheduled --json             # JSON output
+
 kennel ui                           # open web dashboard (localhost:5544)
 kennel ui --port 8080               # custom port
 
@@ -97,6 +100,7 @@ kennel v0.2.0
 - Inline log viewer, notes editor
 - Start/stop/restart controls
 - Health check panel
+- Scheduled tasks section (failed runs in red, running runs pulsing, cost in USD)
 - Claude integration (investigate services with AI)
 - Dark/light theme, keyboard navigation
 - Auto-refresh every 60 seconds
@@ -138,6 +142,11 @@ Add to `~/.claude.json`:
 | `service_action` | Start, stop, or restart a service |
 | `service_logs` | Get recent log output |
 | `doctor` | Run health checks |
+| `list_scheduled_tasks` | Scheduled agent tasks with schedule, next run, last status, cost, last 7 results |
+
+## Scheduled tasks
+
+`kennel scheduled`, the dashboard's Scheduled section, and `list_scheduled_tasks` join launchd jobs labelled `com.alexpriest.task.*` (run through `~/Code/tools/scheduled-tasks/run_task.py`) with the runner's state in `~/.local/state/scheduled-tasks/` (`<slug>.json` for the latest run, `history.jsonl` for the last 7). `com.alexpriest.alice-payroll` is a plain script, so its status comes from launchd's last exit code and its log. A task with no state yet shows as "never run".
 
 ## Backends
 

@@ -27,6 +27,27 @@ export interface DoctorIssue {
   suggestion?: string;
 }
 
+export type RunStatus = 'running' | 'ok' | 'failed';
+export type TaskStatus = RunStatus | 'never run';
+
+export interface ScheduledTask {
+  label: string;
+  name: string;
+  slug: string;
+  kind: 'llm' | 'script';
+  schedule: string;
+  nextRun: string | null;
+  lastRunStart: string | null;
+  lastRunFinish: string | null;
+  status: TaskStatus;
+  durationS: number | null;
+  costUsd: number | null;
+  error: string | null;
+  docPath: string | null;
+  docUrl: string | null;
+  recent: RunStatus[];
+}
+
 export interface KennelConfig {
   aliases: Record<string, string>;
   notes: Record<string, string>;

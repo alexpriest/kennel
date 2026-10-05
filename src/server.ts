@@ -4,6 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
+import { listScheduledTasks } from './scheduled.js';
 
 const registry = new Registry();
 
@@ -92,6 +93,18 @@ server.tool(
           ? 'All services look healthy!'
           : JSON.stringify(issues, null, 2),
       }],
+    };
+  }
+);
+
+server.tool(
+  'list_scheduled_tasks',
+  'List scheduled agent tasks run from launchd: schedule, next run, last run status, duration, cost, error excerpt, and last 7 results',
+  {},
+  async () => {
+    const tasks = await listScheduledTasks();
+    return {
+      content: [{ type: 'text', text: JSON.stringify(tasks, null, 2) }],
     };
   }
 );

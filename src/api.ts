@@ -5,6 +5,7 @@ import { join, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
+import { listScheduledTasks } from './scheduled.js';
 import { getDashboardHtml } from './dashboard.js';
 import { loadConfig, saveConfig, CLAUDE_DIR, ensureClaudeDir } from './config.js';
 import type { BackendType, ServiceStatus } from './types.js';
@@ -200,6 +201,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   if (pathname === '/api/doctor' && req.method === 'GET') {
     const issues = await runDoctor(registry);
     json(res, issues);
+    return;
+  }
+
+  if (pathname === '/api/scheduled' && req.method === 'GET') {
+    json(res, await listScheduledTasks());
     return;
   }
 

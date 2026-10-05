@@ -1,4 +1,4 @@
-import type { Service, DoctorIssue, KennelConfig, ServiceAction, Terminal } from './types';
+import type { Service, DoctorIssue, KennelConfig, ServiceAction, Terminal, ScheduledTask } from './types';
 
 const BASE = '';
 
@@ -35,6 +35,10 @@ export async function getLogs(name: string, lines = 50): Promise<string> {
 
 export async function getDoctor(): Promise<DoctorIssue[]> {
   return fetchJSON<DoctorIssue[]>('/api/doctor');
+}
+
+export async function getScheduled(): Promise<ScheduledTask[]> {
+  return fetchJSON<ScheduledTask[]>('/api/scheduled');
 }
 
 export async function getConfig(): Promise<KennelConfig> {

@@ -7,6 +7,8 @@
   import Toolbar from './lib/components/Toolbar.svelte';
   import ServiceTable from './lib/components/ServiceTable.svelte';
   import DoctorPanel from './lib/components/DoctorPanel.svelte';
+  import ScheduledPanel from './lib/components/ScheduledPanel.svelte';
+  import { refreshScheduled } from './lib/stores/scheduled';
   import ToastContainer from './lib/components/ToastContainer.svelte';
 
   const REFRESH_INTERVAL = 60;
@@ -14,7 +16,7 @@
   let intervalId: ReturnType<typeof setInterval>;
 
   async function refresh() {
-    await refreshServices();
+    await Promise.all([refreshServices(), refreshScheduled()]);
     countdown = REFRESH_INTERVAL;
   }
 
@@ -39,6 +41,7 @@
   <StatsBar />
   <Toolbar />
   <ServiceTable />
+  <ScheduledPanel />
   <DoctorPanel />
 </div>
 <ToastContainer />

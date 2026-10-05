@@ -2,7 +2,8 @@
 import { Command } from 'commander';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
-import { formatServiceTable, formatServiceInfo, formatDoctorResults, formatActionResult } from './formatter.js';
+import { formatServiceTable, formatServiceInfo, formatDoctorResults, formatActionResult, formatScheduledTable } from './formatter.js';
+import { listScheduledTasks } from './scheduled.js';
 import chalk from 'chalk';
 import type { BackendType, ServiceStatus } from './types.js';
 
@@ -156,6 +157,19 @@ program
       console.log(JSON.stringify(issues, null, 2));
     } else {
       console.log(formatDoctorResults(issues));
+    }
+  });
+
+program
+  .command('scheduled')
+  .description('Show scheduled agent tasks: schedule, next run, last result, cost')
+  .option('--json', 'output as JSON')
+  .action(async (opts) => {
+    const tasks = await listScheduledTasks();
+    if (opts.json) {
+      console.log(JSON.stringify(tasks, null, 2));
+    } else {
+      console.log(formatScheduledTable(tasks));
     }
   });
 

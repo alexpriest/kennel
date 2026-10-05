@@ -27,7 +27,7 @@ interface LaunchctlEntry {
   label: string;
 }
 
-function parseLaunchctlList(output: string): LaunchctlEntry[] {
+export function parseLaunchctlList(output: string): LaunchctlEntry[] {
   const entries: LaunchctlEntry[] = [];
   for (const line of output.trim().split('\n').slice(1)) {
     const parts = line.trim().split(/\t/);
