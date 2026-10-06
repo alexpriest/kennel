@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kennel Today Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F4EEE2;
+    --paper-raised: #FBF8F1;
+    --paper-deep: #ECE4D2;
+    --ink: #1F2328;
+    --ink-2: #474C54;
+    --ink-3: #5E636B;
+    --rule: #D6CCB9;
+    --hair: rgba(31, 35, 40, .38);
+
+    /* status: saturated, always paired with a shape and a word */
+    --fail: #C7362B;
+    --fail-wash: #FAEAE6;
+    --missed: #D18F12;
+
+    /* domain: muted, never red / amber / green hues */
+    --d-kit: #4A46BE;
+    --d-paloma: #A0397E;
+    --d-vault: #1C7281;
+    --d-home: #8A5A22;
+    --d-anth: #2E5E9C;
+    --d-mac: #676C74;
+
+    --font: "Rubik", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --side: 280px;
+    --gutter: 40px;
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  a { color: inherit; }
+  button, summary { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
+
+  /* =========================================================
+     frame: margin column + page
+     ========================================================= */
+  .frame { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); min-height: 100vh; }
+
+  .side { background: var(--paper-deep); border-right: 2px solid var(--ink); }
+  .side-in {
+    position: sticky; top: 0;
+    min-height: 100vh; max-height: 100vh; overflow-y: auto;
+    display: flex; flex-direction: column;
+    padding: 24px 16px 18px;
+  }
+
+  /* corner box */
+  .corner { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
+  .corner .digs-mark { width: 52px; height: 52px; flex: none; display: block; }
+  .wordmark { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+  .where { margin: 7px 0 0; font-size: 13.5px; line-height: 1.35; color: var(--ink-3); font-weight: 500; }
+  .where span { display: block; white-space: nowrap; }
+  .where .sep { display: none; }
+
+  /* search: an input, not a row */
+  .jump {
+    margin: 20px 0 0;
+    display: flex; align-items: center; gap: 9px;
+    width: 100%; height: 36px; padding: 0 8px 0 10px;
+    background: var(--paper-raised);
+    border: 1px solid var(--hair);
+    color: var(--ink-3); font-weight: 500; font-size: 15px;
+    cursor: text; text-align: left;
+  }
+  .jump:hover { border-color: var(--ink); }
+  .jump svg { width: 16px; height: 16px; flex: none; stroke: currentColor; }
+  .jump .t { flex: 1; }
+  .jump kbd {
+    font: 600 12px/1 var(--font); color: var(--ink-3);
+    border: 1px solid var(--hair); border-radius: 3px;
+    padding: 3px 5px 3px; background: var(--paper);
+  }
+
+  /* groups and rows */
+  .group { margin: 0; padding: 0; list-style: none; }
+  .side h4 {
+    margin: 22px 0 6px; padding: 0 12px;
+    font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .side h4:first-of-type { margin-top: 24px; }
+  .row {
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    height: 36px; margin: 0 -16px; padding: 0 16px 0 28px;
+    width: calc(100% + 32px);
+    background: transparent; border: 0;
+    text-decoration: none; font-size: 16px; font-weight: 500; color: var(--ink);
+    cursor: pointer; text-align: left;
+  }
+  .row .ic { width: 18px; height: 18px; flex: none; stroke: var(--ink-2); fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .row .lbl { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .n { font-size: 13.5px; font-weight: 500; color: var(--ink-3); }
+  .row:hover { background: var(--paper); }
+  .row:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; border-radius: 0; }
+  .row[aria-current] { background: var(--paper-raised); font-weight: 700; }
+  .row[aria-current]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink); }
+  .row[aria-current] .ic { stroke: var(--ink); stroke-width: 2; }
+  .row[aria-current] .n { color: var(--ink); font-weight: 700; }
+  .row[aria-current] .n.alert { color: var(--fail); }
+  .row.muted { color: var(--ink-3); }
+  .row.muted .ic { stroke: var(--ink-3); }
+  .row.muted .n { font-size: 13px; letter-spacing: .02em; }
+
+  /* domain filters: swatch + ink label, distinct from views */
+  .row.filter { height: 34px; }
+  .row.filter .sw { width: 12px; height: 12px; flex: none; margin: 0 3px; border-radius: 2px; }
+  .row.filter[aria-pressed="true"] { background: var(--paper-raised); font-weight: 700; }
+  .row.filter[aria-pressed="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink); }
+
+  .side-foot { margin-top: auto; padding: 20px 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+  .live i { width: 9px; height: 9px; background: var(--ink); border-radius: 50%; display: inline-block; animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+  .drawer summary { display: none; }
+
+  /* =========================================================
+     page
+     ========================================================= */
+  .page { padding: 28px var(--gutter) 72px; max-width: calc(1100px + 2 * var(--gutter)); }
+
+  /* ---------- the splash panel: Digs and the verdict ---------- */
+  .hero {
+    position: relative;
+    padding: 28px 32px 26px 36px;
+    background: var(--paper-raised);
+    border: 2px solid var(--ink);
+  }
+  .hero-in { position: relative; min-height: 232px; }
+  .hero-text { min-width: 0; }
+  .hero h2 { margin: 0 0 14px; font-size: 58px; line-height: 1; font-weight: 800; letter-spacing: -0.025em; }
+  .hero h2 .count { color: var(--fail); }
+  .verdict { margin: 0; font-size: 22px; line-height: 31px; color: var(--ink-2); max-width: 70ch; }
+  .verdict strong { color: var(--ink); font-weight: 600; }
+  .verdict .ln { white-space: nowrap; }
+  .verdict .ln b { color: var(--ink); font-weight: 600; }
+  .hero.flowing .verdict { max-width: none; }
+
+  .digs-stage { position: absolute; top: -12px; right: -6px; text-align: right; }
+  .digs-art {
+    display: block; width: 236px; height: 236px;
+    transition: transform .22s ease;
+    user-select: none; -webkit-user-drag: none;
+  }
+  .digs-art:hover { transform: translateY(-2px); }
+  .preview {
+    margin: -22px 6px 0 0; display: flex; justify-content: flex-end; align-items: center; gap: 2px; position: relative;
+    font-size: 12px; color: var(--ink-3);
+  }
+  .preview span { margin-right: 6px; }
+  .preview button {
+    border: 0; background: transparent; padding: 2px 5px; font-size: 12px; font-weight: 500; color: var(--ink-3);
+    cursor: pointer; border-bottom: 1px solid transparent;
+  }
+  .preview button:hover { color: var(--ink); }
+  .preview button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* ---------- the problem ---------- */
+  .problem {
+    position: relative;
+    margin-top: 36px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px 40px;
+    align-items: start;
+    padding: 30px 28px 26px 26px;
+    border: 2px solid var(--fail);
+    background: var(--paper-raised);
+  }
+  .caption {
+    position: absolute; top: -2px; left: -2px;
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 14px 6px 12px;
+    background: var(--fail); color: #fff;
+    font-weight: 700; font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    transform: translateY(-50%);
+  }
+  .caption .mark { width: 10px; height: 10px; background: #fff; display: inline-block; flex: none; }
+
+  .job-title {
+    margin: 0;
+    font-size: 26px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  .domain { font-size: 15px; font-weight: 600; letter-spacing: .01em; text-decoration: none; }
+  .domain:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .dom-kit { color: var(--d-kit); }
+  .dom-paloma { color: var(--d-paloma); }
+  .dom-vault { color: var(--d-vault); }
+  .dom-home { color: var(--d-home); }
+  .dom-anth { color: var(--d-anth); }
+  .dom-mac { color: var(--d-mac); }
+
+  .purpose { margin: 6px 0 0; color: var(--ink-2); font-size: 17px; max-width: 70ch; }
+  .detail { margin: 10px 0 0; font-size: 17px; max-width: 70ch; }
+  .detail code { font-family: inherit; font-weight: 600; background: var(--fail-wash); color: var(--fail); padding: 1px 7px; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-self: center; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0 18px;
+    border: 2px solid var(--ink);
+    background: var(--paper-raised);
+    font-weight: 600; font-size: 16px;
+    cursor: pointer; white-space: nowrap;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--paper); }
+  .btn.primary { background: var(--ink); color: var(--paper-raised); }
+  .btn.primary:hover { background: #000; }
+  .btn.quiet { border-color: transparent; border-bottom-color: var(--rule); color: var(--ink-2); padding: 0 12px; }
+  .btn.quiet:hover { border-bottom-color: var(--ink); background: transparent; }
+
+  /* ---------- sections ---------- */
+  .section { margin-top: 56px; }
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .section-head h3 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+  .section-head .sum { margin: 0; color: var(--ink-2); font-size: 16px; }
+  .section-head .sum b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- the day strip ---------- */
+  .strip { position: relative; margin-top: 26px; height: 128px; }
+  .strip .hum { position: absolute; left: 0; right: 0; top: 48px; height: 36px; width: 100%; }
+  .strip .axis { position: absolute; left: 0; right: 0; top: 84px; height: 2px; background: var(--ink); }
+  .strip .hour {
+    position: absolute; top: 84px; transform: translateX(-50%);
+    font-size: 14px; color: var(--ink-3); font-weight: 500;
+    padding-top: 12px;
+  }
+  .strip .hour::before {
+    content: ""; position: absolute; top: 0; left: 50%; width: 2px; height: 8px; background: var(--ink);
+    transform: translateX(-50%);
+  }
+  .strip .hour.first { transform: none; }
+  .strip .hour.first::before { left: 1px; transform: none; }
+  .strip .hour.last { transform: translateX(-100%); }
+  .strip .hour.last::before { left: auto; right: 0; transform: none; }
+
+  .run { position: absolute; top: 54px; width: 10px; height: 32px; transform: translateX(-50%); background: var(--ink); }
+  .run.todo { background: var(--paper); border: 2px solid var(--ink); }
+  .now { position: absolute; top: 10px; bottom: 44px; width: 2px; background: var(--ink); transform: translateX(-50%); }
+  .now .lbl {
+    position: absolute; top: -4px; left: 10px; white-space: nowrap;
+    font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .now .lbl span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-2); margin-left: 6px; }
+  .now::after {
+    content: ""; position: absolute; top: -1px; left: 50%; width: 12px; height: 12px;
+    background: var(--ink); border-radius: 50%; transform: translate(-50%, -50%);
+  }
+
+  .legend {
+    list-style: none; margin: 20px 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 24px;
+    font-size: 16px;
+  }
+  .legend li { display: flex; align-items: flex-start; gap: 10px; line-height: 1.35; }
+  .legend li .g { margin-top: 2px; }
+  .legend li.wide { grid-column: 1 / -1; margin-top: 4px; }
+  .legend .g { width: 10px; height: 18px; background: var(--ink); flex: none; }
+  .legend .g.todo { background: var(--paper); border: 2px solid var(--ink); }
+  .legend .g.hum {
+    width: 28px; height: 14px; border: 0; background:
+      repeating-linear-gradient(to bottom, transparent 0 2px, var(--ink-3) 2px 3px, transparent 3px 5px);
+    opacity: .9;
+  }
+  .legend time { font-weight: 600; margin-right: 4px; }
+  .legend .q { display: block; color: var(--ink-3); font-size: 15px; margin-top: 1px; }
+  .legend li.wide .q { display: inline; margin-left: 8px; }
+  .legend li.wide .q::before { content: "— "; }
+
+  /* ---------- agents table ---------- */
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 16px 14px 16px 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  th { font-size: 14px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; padding-top: 14px; padding-bottom: 10px; }
+  th:last-child, td:last-child { text-align: right; padding-right: 0; }
+  td.c-state { width: 36px; padding-right: 0; padding-top: 22px; }
+  td.c-job .name { font-weight: 700; font-size: 18px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  td.c-job .purpose { font-size: 16px; margin-top: 2px; }
+  td.c-when { white-space: nowrap; width: 190px; }
+  td.c-when .sub { display: block; color: var(--ink-2); font-size: 15px; }
+  td.c-cost { width: 100px; font-weight: 600; }
+  td .nil { color: var(--ink-3); font-weight: 400; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .dot.ok { background: var(--ink); }
+  .dot.todo { border: 2px solid var(--ink); background: transparent; }
+  tr.script td { border-bottom: 0; border-top: 2px solid var(--ink); }
+  tr.script .tag { font-size: 14px; font-weight: 600; color: var(--ink-3); letter-spacing: .03em; text-transform: uppercase; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ---------- cast list ---------- */
+  .cast { margin: 22px 0 0; padding: 0; font-size: 18px; line-height: 1.75; }
+  .cast dt, .cast dd { display: inline; margin: 0; }
+  .cast dt { font-weight: 700; }
+  .cast dt::after { content: " — "; color: var(--ink-3); font-weight: 400; }
+  .cast dd + dt::before { content: "  ·  "; color: var(--ink-3); white-space: pre; }
+  .cast a.more { font-weight: 600; text-underline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live i { animation: none; }
+    .digs-art { transition: none; }
+    .digs-art:hover { transform: none; }
+  }
+
+  /* =========================================================
+     phone: the margin column folds into a top drawer
+     ========================================================= */
+  @media (max-width: 760px) {
+    :root { --gutter: 16px; }
+    .frame { display: block; }
+    .side { border-right: 0; border-bottom: 2px solid var(--ink); }
+    .side-in {
+      position: relative; min-height: 0; max-height: none; overflow: visible;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center;
+      gap: 0 10px; padding: 12px var(--gutter) 12px;
+    }
+    .corner { grid-column: 1; grid-row: 1; gap: 10px; padding: 0; }
+    .corner .digs-mark { width: 44px; height: 44px; }
+    .wordmark { font-size: 22px; }
+    .where { margin-top: 3px; font-size: 13px; }
+    .jump { grid-column: 2; grid-row: 1; margin: 0; width: 40px; height: 40px; padding: 0; justify-content: center; }
+    .jump .t, .jump kbd { display: none; }
+    .drawer { grid-column: 1 / -1; grid-row: 2; }
+    .drawer summary {
+      display: inline-flex; align-items: center; justify-content: center;
+      position: absolute; right: var(--gutter); top: 12px;
+      height: 40px; padding: 0 12px;
+      border: 2px solid var(--ink); background: var(--paper-raised);
+      font-weight: 600; font-size: 15px; cursor: pointer; list-style: none; user-select: none;
+    }
+    .drawer summary::-webkit-details-marker { display: none; }
+    .drawer summary::after { content: "Menu"; }
+    .drawer[open] summary::after { content: "Close"; }
+    .jump { margin-right: 84px; }
+    .drawer[open] { padding-top: 8px; }
+    .side h4 { margin: 16px 0 4px; padding: 0 12px; }
+    .side h4:first-of-type { margin-top: 8px; }
+    .row { height: 40px; }
+    .row.filter { height: 38px; }
+    .side-foot { grid-column: 1 / -1; grid-row: 3; display: none; }
+    .drawer[open] ~ .side-foot { display: flex; padding-top: 12px; justify-content: flex-start; }
+
+    .page { padding-top: 24px; max-width: none; }
+    .hero { padding: 20px 18px 18px; }
+    .hero-in { min-height: 0; }
+    .hero h2 { font-size: 40px; margin-bottom: 12px; }
+    .verdict { font-size: 18px; line-height: 27px; }
+    .digs-stage { position: static; margin: 8px 0 0; text-align: left; }
+    .digs-art { width: 176px; height: 176px; margin-left: -12px; }
+    .preview { justify-content: flex-start; margin: -14px 0 0; flex-wrap: wrap; }
+    .problem { grid-template-columns: 1fr; padding: 20px 18px; gap: 18px; margin-top: 30px; }
+    .caption { font-size: 13px; }
+    .job-title { font-size: 23px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; align-self: stretch; }
+    .actions .btn.primary { grid-column: 1 / -1; }
+    .section { margin-top: 44px; }
+    .strip { height: 124px; }
+    .strip .hour.mid { display: none; }
+    .legend { grid-template-columns: 1fr; gap: 8px; }
+
+    table, thead, tbody, tr, td, th { display: block; }
+    thead { display: none; }
+    tr { position: relative; padding: 16px 0 16px 28px; border-bottom: 1px solid var(--rule); }
+    td { border: 0; padding: 0; width: auto; }
+    td.c-state { position: absolute; left: 0; top: 22px; padding: 0; width: auto; }
+    td.c-job .name { font-size: 18px; }
+    td.c-when, td.c-cost { display: inline-block; width: auto; text-align: left; margin-top: 8px; margin-right: 22px; font-size: 15px; white-space: normal; }
+    td.c-when .sub { display: inline; }
+    td.c-when .sub::before { content: " · "; color: var(--ink-3); }
+    td.c-when::before, td.c-cost::before { content: attr(data-label) " "; color: var(--ink-3); font-weight: 500; }
+    td.c-cost { font-weight: 600; }
+    td.c-cost.nil-cell { display: none; }
+    tr.script { border-top: 2px solid var(--ink); border-bottom: 0; }
+    tr.script td { border: 0; }
+    .cast { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- ============ the margin column ============ -->
+  <aside class="side" aria-label="Kennel navigation">
+    <div class="side-in">
+      <div class="corner">
+        <img class="digs-mark" src="digs-head.png" width="52" height="52" alt="Digs">
+        <div class="corner-text">
+          <h1 class="wordmark">Kennel</h1>
+          <p class="where"><span>Tuesday, Oct 6</span><span class="sep"> · </span><span>Mac Mini · 60 jobs</span></p>
+        </div>
+      </div>
+
+      <button class="jump" type="button" aria-label="Jump to anything (command K)">
+        <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke-width="1.75" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+        <span class="t">Jump to…</span><kbd>⌘K</kbd>
+      </button>
+
+      <details class="drawer" open>
+        <summary aria-label="Menu"></summary>
+        <nav aria-label="Views">
+          <h4 id="g-views">Views</h4>
+          <ul class="group" aria-labelledby="g-views">
+            <li><a class="row" href="#today" aria-current="page">
+              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7"/><circle cx="9" cy="9" r="1.6" fill="currentColor" stroke="none"/></svg>
+              <span class="lbl">Today</span><span class="n alert">1</span></a></li>
+            <li><a class="row" href="#daemons">
+              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5.5q1.75-2 3.5 0t3.5 0t3.5 0t3.5 0M2 9.5q1.75-2 3.5 0t3.5 0t3.5 0t3.5 0M2 13.5q1.75-2 3.5 0t3.5 0t3.5 0t3.5 0"/></svg>
+              <span class="lbl">Daemons</span><span class="n">16</span></a></li>
+            <li><a class="row" href="#scheduled">
+              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l2.6 1.8"/></svg>
+              <span class="lbl">Scheduled</span><span class="n">35</span></a></li>
+            <li><a class="row" href="#agents">
+              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 4h12v8H8.5L5 15v-3H3z"/></svg>
+              <span class="lbl">Agents</span><span class="n">6</span></a></li>
+            <li><a class="row muted" href="#hidden">
+              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 9s2.6-4.5 7-4.5S16 9 16 9s-2.6 4.5-7 4.5S2 9 2 9z"/><circle cx="9" cy="9" r="2"/><path d="M3.5 14.5 14.5 3.5"/></svg>
+              <span class="lbl">Mac &amp; third-party</span><span class="n">hidden</span></a></li>
+          </ul>
+        </nav>
+        <div role="group" aria-labelledby="g-domains">
+          <h4 id="g-domains">Filter by domain</h4>
+          <ul class="group">
+            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-kit)" aria-hidden="true"></i><span class="lbl">Kit</span></button></li>
+            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-paloma)" aria-hidden="true"></i><span class="lbl">Paloma</span></button></li>
+            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-vault)" aria-hidden="true"></i><span class="lbl">Vault and memory</span></button></li>
+            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-home)" aria-hidden="true"></i><span class="lbl">Home and family</span></button></li>
+            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-anth)" aria-hidden="true"></i><span class="lbl">Anthimeros</span></button></li>
+          </ul>
+        </div>
+      </details>
+
+      <div class="side-foot">
+        <span class="live"><i aria-hidden="true"></i>live</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ the page ============ -->
+  <main class="page">
+
+    <!-- splash panel: Digs reacts, the verdict flows around him -->
+    <section class="hero" id="today" aria-labelledby="state">
+      <div class="hero-in">
+        <div class="hero-text">
+          <h2 id="state"><span class="count">One</span> problem.</h2>
+          <p class="verdict" id="verdict"><strong>Agent sync failed and has not run since.</strong> The other 59 jobs are fine: 16 daemons up, 34 scheduled jobs on time, and $2.31 of agent spend this month.</p>
+        </div>
+        <div class="digs-stage">
+          <img class="digs-art" id="digs" src="digs-failed.png" width="236" height="236" alt="Digs, barking: something failed" data-state="failed">
+          <div class="preview" aria-label="Preview Digs in each state">
+            <span>Digs</span>
+            <button type="button" data-set="quiet" aria-pressed="false">quiet</button>
+            <button type="button" data-set="alert" aria-pressed="false">alert</button>
+            <button type="button" data-set="missed" aria-pressed="false">missed</button>
+            <button type="button" data-set="failed" aria-pressed="true">failed</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <article class="problem" aria-label="Agent sync, failed">
+      <div>
+        <span class="caption"><span class="mark" aria-hidden="true"></span>Failed</span>
+        <h3 class="job-title">Agent sync <a class="domain dom-kit" href="#kit">Kit</a></h3>
+        <p class="purpose">Regenerates every agent instruction file from the canonical sources.</p>
+        <p class="detail">The last run exited with <code>code 3</code> and it has not run since.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="button">Ask Kit to fix</button>
+        <a class="btn" href="#log">View log</a>
+        <button class="btn quiet" type="button">Mute for a day</button>
+      </div>
+    </article>
+
+    <!-- the day as one strip -->
+    <section class="section" id="scheduled" aria-labelledby="h-today">
+      <div class="section-head">
+        <h3 id="h-today">Today, midnight to midnight</h3>
+        <p class="sum"><b>35 scheduled jobs.</b> All on time except agent sync, above.</p>
+      </div>
+
+      <div class="strip" role="img" aria-label="Timeline of today's scheduled runs. Completed: 3:30am activity digest; 5:00am Kit rebuild and CRM contacts. Now is about 10:00am. Upcoming: 1:00pm changelog; 9:00pm memory distillation. Fourteen jobs on 5, 15 and 30 minute loops have run all morning without a problem.">
+        <svg class="hum" aria-hidden="true">
+          <defs>
+            <pattern id="hum-ink" width="36" height="9" patternUnits="userSpaceOnUse">
+              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".45" stroke-width="1.2"/>
+            </pattern>
+            <pattern id="hum-faint" width="36" height="9" patternUnits="userSpaceOnUse">
+              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".14" stroke-width="1.2" stroke-dasharray="3 4"/>
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="41.67%" height="36" fill="url(#hum-ink)"/>
+          <rect x="41.67%" y="0" width="58.33%" height="36" fill="url(#hum-faint)"/>
+        </svg>
+
+        <div class="axis"></div>
+        <span class="hour first" style="left:0">12am</span>
+        <span class="hour mid" style="left:16.667%">4am</span>
+        <span class="hour" style="left:33.333%">8am</span>
+        <span class="hour mid" style="left:50%">noon</span>
+        <span class="hour" style="left:66.667%">4pm</span>
+        <span class="hour mid" style="left:83.333%">8pm</span>
+        <span class="hour last" style="left:100%">12am</span>
+
+        <span class="run" style="left:14.583%" title="3:30am activity digest, succeeded"></span>
+        <span class="run" style="left:20.833%" title="5:00am Kit rebuild and CRM contacts, succeeded"></span>
+        <span class="run todo" style="left:54.167%" title="1:00pm changelog, upcoming"></span>
+        <span class="run todo" style="left:87.5%" title="9:00pm memory distillation, upcoming"></span>
+
+        <div class="now" style="left:41.667%"><span class="lbl">Now<span>about 10:00am</span></span></div>
+      </div>
+
+      <ul class="legend">
+        <li><span class="g" aria-hidden="true"></span><span><time>3:30am</time>activity digest<span class="q">succeeded</span></span></li>
+        <li><span class="g" aria-hidden="true"></span><span><time>5:00am</time>Kit rebuild, CRM contacts<span class="q">succeeded</span></span></li>
+        <li><span class="g todo" aria-hidden="true"></span><span><time>1:00pm</time>Claude Code changelog<span class="q">first run</span></span></li>
+        <li><span class="g todo" aria-hidden="true"></span><span><time>9:00pm</time>memory distillation<span class="q">first run</span></span></li>
+        <li class="wide"><span class="g hum" aria-hidden="true"></span><span>14 jobs on 5-, 15- and 30-minute loops<span class="q">all fine, running since midnight</span></span></li>
+      </ul>
+    </section>
+
+    <!-- agents -->
+    <section class="section" id="agents" aria-labelledby="h-agents">
+      <div class="section-head">
+        <h3 id="h-agents">Agents</h3>
+        <p class="sum">Scheduled AI runs that cost money. <b>October so far: $2.31</b>, one run.</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"><span class="sr">State</span></th>
+            <th scope="col">Agent</th>
+            <th scope="col">Last run</th>
+            <th scope="col">Next</th>
+            <th scope="col">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
+            <td class="c-job">
+              <div class="name">Daily Briefing <a class="domain dom-kit" href="#kit">Kit</a></div>
+              <p class="purpose">Texts you what matters today.</p>
+            </td>
+            <td class="c-when" data-label="Last run">Mon 12:35pm<span class="sub">test run · 4m 03s</span></td>
+            <td class="c-when" data-label="Next">Wed 4:55am</td>
+            <td class="c-cost" data-label="Cost">$2.31</td>
+          </tr>
+          <tr>
+            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+            <td class="c-job">
+              <div class="name">Claude Code Changelog <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
+              <p class="purpose">Reads each new release and notes what's worth adopting.</p>
+            </td>
+            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+            <td class="c-when" data-label="Next">Today 1:00pm<span class="sub">first run</span></td>
+            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+          </tr>
+          <tr>
+            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+            <td class="c-job">
+              <div class="name">Memory Distillation <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
+              <p class="purpose">Turns the day's log into lasting memory.</p>
+            </td>
+            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+            <td class="c-when" data-label="Next">Today 9:00pm<span class="sub">first run</span></td>
+            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+          </tr>
+          <tr>
+            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+            <td class="c-job">
+              <div class="name">Weekly Review <a class="domain dom-kit" href="#kit">Kit</a></div>
+              <p class="purpose">Catches you up on the whole week if it's the only thing you read.</p>
+            </td>
+            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+            <td class="c-when" data-label="Next">Fri 4:00pm</td>
+            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+          </tr>
+          <tr>
+            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+            <td class="c-job">
+              <div class="name">Project Refresh <a class="domain dom-kit" href="#kit">Kit</a></div>
+            </td>
+            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+            <td class="c-when" data-label="Next">Sun 9:00am</td>
+            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+          </tr>
+          <tr>
+            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+            <td class="c-job">
+              <div class="name">Maven Watch <a class="domain dom-home" href="#home">Home and family</a></div>
+            </td>
+            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+            <td class="c-when" data-label="Next">Nov 1, 1:00pm</td>
+            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+          </tr>
+          <tr class="script">
+            <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
+            <td class="c-job">
+              <div class="name">Alice Payroll <a class="domain dom-home" href="#home">Home and family</a> <span class="tag">script, no AI</span></div>
+              <p class="purpose">Submits nanny payroll from the calendar.</p>
+            </td>
+            <td class="c-when" data-label="Last run">Mon 12:12pm<span class="sub">by hand</span></td>
+            <td class="c-when" data-label="Next">Mon 9:00am</td>
+            <td class="c-cost" data-label="Cost"><span class="nil">none</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- daemons as a cast list -->
+    <section class="section" id="daemons" aria-labelledby="h-daemons">
+      <div class="section-head">
+        <h3 id="h-daemons">Daemons</h3>
+        <p class="sum"><b>16 up.</b> None down, none flapping.</p>
+      </div>
+      <dl class="cast">
+        <dt class="dom-kit">Kit</dt>
+        <dd>Kit on iMessage, Kit gateway, Kit email, Message filter</dd>
+        <dt class="dom-vault">Vault and memory</dt>
+        <dd>Content vault sync</dd>
+        <dt class="dom-anth">Anthimeros</dt>
+        <dd>Agent runner</dd>
+        <dt class="dom-home">Home and family</dt>
+        <dd>Bike garage door</dd>
+        <dt class="dom-mac">Mac</dt>
+        <dd>AirDrop watchdog, <a class="more" href="#all-daemons">and 8 more</a></dd>
+      </dl>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ---------- Digs: one drawing per state. ---------- */
+(function () {
+  const STATES = ['quiet', 'alert', 'missed', 'failed'];
+  const LABEL = {
+    quiet: 'Digs, asleep: all quiet',
+    alert: 'Digs, head up: something is running or due',
+    missed: 'Digs, puzzled: a run was missed',
+    failed: 'Digs, barking: something failed',
+  };
+  const art = document.getElementById('digs');
+  const params = new URLSearchParams(location.search);
+  let state = STATES.includes(params.get('state')) ? params.get('state') : 'failed';
+  const listeners = [];
+  window.Digs = {
+    get state() { return state; },
+    get src() { return 'digs-' + state + '.png'; },
+    onChange(fn) { listeners.push(fn); },
+  };
+  function set(s) {
+    state = s;
+    art.src = 'digs-' + s + '.png';
+    art.alt = LABEL[s];
+    art.dataset.state = s;
+    document.querySelectorAll('.preview button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.set === s)));
+    listeners.forEach(fn => fn());
+  }
+  document.querySelectorAll('.preview button').forEach(b => b.addEventListener('click', () => set(b.dataset.set)));
+  set(state);
+})();
+</script>
+
+<script type="module">
+/* ---------- The verdict hugs Digs's outline: each line is laid out by Pretext at the width his silhouette leaves. ---------- */
+const hero = document.querySelector('.hero');
+const host = document.querySelector('.hero-in');
+const para = document.getElementById('verdict');
+const art = document.getElementById('digs');
+const phone = window.matchMedia('(max-width: 760px)');
+if (phone.matches) document.querySelector('.drawer').removeAttribute('open');
+
+const ITEMS = [
+  { text: 'Agent sync failed and has not run since.', font: '600 22px Rubik', weight: 600 },
+  { text: ' The other 59 jobs are fine: 16 daemons up, 34 scheduled jobs on time, and $2.31 of agent spend this month.', font: '400 22px Rubik', weight: 400 },
+];
+const LH = 31, GAP = 28, MIN = 340, ALPHA = 40;
+
+// Leftmost inked pixel of every row in the drawing, read once per state from an offscreen canvas.
+const outlines = new Map();
+async function outline(src) {
+  if (outlines.has(src)) return outlines.get(src);
+  let result = null;
+  try {
+    const img = new Image(); img.src = src; await img.decode();
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d', { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, c.width, c.height).data;
+    const left = new Int32Array(c.height).fill(-1);
+    for (let y = 0; y < c.height; y++) {
+      const row = y * c.width;
+      for (let x = 0; x < c.width; x++) if (data[(row + x) * 4 + 3] > ALPHA) { left[y] = x; break; }
+    }
+    result = { w: c.width, h: c.height, left };
+  } catch (e) { result = null; } // tainted canvas or decode failure: rectangular exclusion below
+  outlines.set(src, result);
+  return result;
+}
+
+function plain() { return '<strong>' + ITEMS[0].text + '</strong>' + ITEMS[1].text; }
+
+try {
+  const rich = await import('https://cdn.jsdelivr.net/npm/@chenglou/pretext/rich-inline/+esm');
+  await Promise.all(ITEMS.map(it => document.fonts.load(it.font, it.text)));
+  const prepared = rich.prepareRichInline(ITEMS.map(({ text, font }) => ({ text, font })));
+
+  async function flow() {
+    if (phone.matches) { hero.classList.remove('flowing'); para.innerHTML = plain(); return; }
+    const src = window.Digs.src;
+    const sil = await outline(src);
+    if (src !== window.Digs.src) return; // state changed while reading; a newer flow is coming
+    hero.classList.add('flowing');
+
+    const W = host.clientWidth;
+    const hostBox = host.getBoundingClientRect(), box = art.getBoundingClientRect();
+    const imgX = box.left - hostBox.left, imgY = box.top - hostBox.top;
+    const scale = sil ? box.width / sil.w : 1;
+
+    const frag = document.createDocumentFragment();
+    let y = para.offsetTop, start, guard = 0;
+    while (guard++ < 40) {
+      let edge = Infinity;
+      if (sil) {
+        const r0 = Math.max(0, Math.floor((y - imgY) / scale));
+        const r1 = Math.min(sil.h - 1, Math.floor((y + LH - 1 - imgY) / scale));
+        for (let r = r0; r <= r1; r++) if (sil.left[r] >= 0) edge = Math.min(edge, imgX + sil.left[r] * scale);
+      } else if (y + LH > imgY && y < imgY + box.height) {
+        edge = imgX;
+      }
+      const avail = edge === Infinity ? W : Math.max(MIN, Math.min(W, edge - GAP));
+      const range = rich.layoutNextRichInlineLineRange(prepared, avail, start);
+      if (!range) break;
+      const line = rich.materializeRichInlineLineRange(prepared, range);
+      const div = document.createElement('div'); div.className = 'ln';
+      line.fragments.forEach(f => {
+        const el = document.createElement(ITEMS[f.itemIndex].weight === 600 ? 'b' : 'span');
+        el.textContent = (f.gapBefore > 0 ? ' ' : '') + f.text;
+        div.appendChild(el);
+      });
+      frag.appendChild(div);
+      start = range.end; y += LH;
+    }
+    para.replaceChildren(frag);
+  }
+
+  let raf = 0;
+  const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(flow); };
+  new ResizeObserver(schedule).observe(host);
+  window.Digs.onChange(schedule);
+  phone.addEventListener('change', schedule);
+  flow();
+} catch (e) {
+  // Pretext unavailable: the paragraph stays a normal paragraph beside Digs.
+}
+</script>
+</body>
+</html>
