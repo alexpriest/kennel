@@ -301,7 +301,7 @@ export function startDashboard(port: number): Promise<void> {
       });
     });
 
-    server.listen(port, () => {
+    server.listen(port, '127.0.0.1', () => {
       resolve();
     });
   });

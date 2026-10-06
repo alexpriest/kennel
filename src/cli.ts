@@ -177,14 +177,17 @@ program
   .command('ui')
   .description('Open the web dashboard')
   .option('-p, --port <port>', 'port number', '5544')
+  .option('--no-open', 'serve without opening a browser (for an always-on LaunchAgent)')
   .action(async (opts) => {
     const { startDashboard } = await import('./api.js');
     const port = parseInt(opts.port);
     await startDashboard(port);
     const url = `http://localhost:${port}`;
     console.log(`kennel dashboard running at ${url}`);
-    const { execFile } = await import('node:child_process');
-    execFile('open', [url]);
+    if (opts.open) {
+      const { execFile } = await import('node:child_process');
+      execFile('open', [url]);
+    }
   });
 
 program
