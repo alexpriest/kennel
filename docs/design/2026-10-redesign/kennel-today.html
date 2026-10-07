@@ -6,7 +6,7 @@
 <title>Kennel Today Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,600;0,800;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --paper: #F4EEE2;
@@ -32,9 +32,10 @@
     --d-mac: #676C74;
 
     --font: "Rubik", "Helvetica Neue", Arial, sans-serif;
-    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --side: 280px;
-    --gutter: 40px;
+
+    /* spacing scale */
+    --s2: 16px; --s3: 24px; --s4: 32px; --s6: 48px; --s8: 64px; --s12: 96px;
   }
 
   * { box-sizing: border-box; }
@@ -44,7 +45,7 @@
     background: var(--paper);
     color: var(--ink);
     font-family: var(--font);
-    font-size: 16px;
+    font-size: 17px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
@@ -66,15 +67,13 @@
     padding: 24px 16px 18px;
   }
 
-  /* corner box */
   .corner { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
-  .corner .digs-mark { width: 52px; height: 52px; flex: none; display: block; }
+  .corner .digs-mark { width: 50px; height: auto; flex: none; display: block; color: var(--ink); }
   .wordmark { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
   .where { margin: 7px 0 0; font-size: 13.5px; line-height: 1.35; color: var(--ink-3); font-weight: 500; }
   .where span { display: block; white-space: nowrap; }
   .where .sep { display: none; }
 
-  /* search: an input, not a row */
   .jump {
     margin: 20px 0 0;
     display: flex; align-items: center; gap: 9px;
@@ -93,7 +92,6 @@
     padding: 3px 5px 3px; background: var(--paper);
   }
 
-  /* groups and rows */
   .group { margin: 0; padding: 0; list-style: none; }
   .side h4 {
     margin: 22px 0 6px; padding: 0 12px;
@@ -122,54 +120,17 @@
   .row.muted { color: var(--ink-3); }
   .row.muted .ic { stroke: var(--ink-3); }
   .row.muted .n { font-size: 13px; letter-spacing: .02em; }
-
-  /* domain filters: swatch + ink label, distinct from views */
   .row.filter { height: 34px; }
   .row.filter .sw { width: 12px; height: 12px; flex: none; margin: 0 3px; border-radius: 2px; }
   .row.filter[aria-pressed="true"] { background: var(--paper-raised); font-weight: 700; }
   .row.filter[aria-pressed="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink); }
 
-  .side-foot { margin-top: auto; padding: 20px 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .side-foot { margin-top: auto; padding: 20px 12px 0; display: flex; flex-direction: column; gap: 10px; }
   .live { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
   .live i { width: 9px; height: 9px; background: var(--ink); border-radius: 50%; display: inline-block; animation: pulse 2.4s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-
-  .drawer summary { display: none; }
-
-  /* =========================================================
-     page
-     ========================================================= */
-  .page { padding: 28px var(--gutter) 72px; max-width: calc(1100px + 2 * var(--gutter)); }
-
-  /* ---------- the splash panel: Digs and the verdict ---------- */
-  .hero {
-    position: relative;
-    padding: 28px 32px 26px 36px;
-    background: var(--paper-raised);
-    border: 2px solid var(--ink);
-  }
-  .hero-in { position: relative; min-height: 232px; }
-  .hero-text { min-width: 0; }
-  .hero h2 { margin: 0 0 14px; font-size: 58px; line-height: 1; font-weight: 800; letter-spacing: -0.025em; }
-  .hero h2 .count { color: var(--fail); }
-  .verdict { margin: 0; font-size: 22px; line-height: 31px; color: var(--ink-2); max-width: 70ch; }
-  .verdict strong { color: var(--ink); font-weight: 600; }
-  .verdict .ln { white-space: nowrap; }
-  .verdict .ln b { color: var(--ink); font-weight: 600; }
-  .hero.flowing .verdict { max-width: none; }
-
-  .digs-stage { position: absolute; top: -12px; right: -6px; text-align: right; }
-  .digs-art {
-    display: block; width: 236px; height: 236px;
-    transition: transform .22s ease;
-    user-select: none; -webkit-user-drag: none;
-  }
-  .digs-art:hover { transform: translateY(-2px); }
-  .preview {
-    margin: -22px 6px 0 0; display: flex; justify-content: flex-end; align-items: center; gap: 2px; position: relative;
-    font-size: 12px; color: var(--ink-3);
-  }
-  .preview span { margin-right: 6px; }
+  .preview { display: flex; align-items: center; flex-wrap: wrap; gap: 0 2px; font-size: 12px; color: var(--ink-3); }
+  .preview span { margin-right: 4px; }
   .preview button {
     border: 0; background: transparent; padding: 2px 5px; font-size: 12px; font-weight: 500; color: var(--ink-3);
     cursor: pointer; border-bottom: 1px solid transparent;
@@ -177,31 +138,49 @@
   .preview button:hover { color: var(--ink); }
   .preview button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
 
-  /* ---------- the problem ---------- */
-  .problem {
+  .drawer summary { display: none; }
+
+  /* =========================================================
+     page: three levels
+     ========================================================= */
+  .page { max-width: 1040px; margin: 0 auto; padding: var(--s6) 56px var(--s12); }
+
+  /* ---------- level 1: the verdict, Digs on the ground rule, the incident ---------- */
+  .splash { position: relative; border-bottom: 2px solid var(--ink); padding-bottom: var(--s3); }
+  .splash-in { position: relative; min-height: 172px; }
+  .splash h2 { margin: 0 0 var(--s2); font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -0.025em; }
+  .splash h2 .count { color: var(--fail); }
+  .verdict { margin: 0; font-size: 22px; line-height: 32px; color: var(--ink-2); max-width: 64ch; }
+  .verdict strong, .verdict b { color: var(--ink); font-weight: 600; }
+  .verdict .ln { white-space: nowrap; }
+  .splash.flowing .verdict { max-width: none; }
+
+  .digs { position: absolute; right: 0; bottom: calc(-1 * var(--s3)); line-height: 0; color: var(--ink); }
+  .digs svg { display: block; transition: transform .22s ease; }
+  .digs:hover svg { transform: translateY(-2px); }
+
+  .incident {
     position: relative;
-    margin-top: 36px;
+    margin-top: var(--s4);
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 16px 40px;
-    align-items: start;
-    padding: 30px 28px 26px 26px;
-    border: 2px solid var(--fail);
+    gap: var(--s2) var(--s6);
+    align-items: center;
+    padding: var(--s4) var(--s4) var(--s4) var(--s4);
     background: var(--paper-raised);
   }
   .caption {
-    position: absolute; top: -2px; left: -2px;
+    position: absolute; top: 0; left: 0;
     display: inline-flex; align-items: center; gap: 10px;
     padding: 6px 14px 6px 12px;
     background: var(--fail); color: #fff;
-    font-weight: 700; font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase;
     transform: translateY(-50%);
   }
-  .caption .mark { width: 10px; height: 10px; background: #fff; display: inline-block; flex: none; }
-
+  .caption .mark { width: 9px; height: 9px; background: #fff; display: inline-block; flex: none; }
   .job-title {
     margin: 0;
-    font-size: 26px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+    font-size: 24px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2;
     display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
   }
   .domain { font-size: 15px; font-weight: 600; letter-spacing: .01em; text-decoration: none; }
@@ -212,12 +191,11 @@
   .dom-home { color: var(--d-home); }
   .dom-anth { color: var(--d-anth); }
   .dom-mac { color: var(--d-mac); }
-
-  .purpose { margin: 6px 0 0; color: var(--ink-2); font-size: 17px; max-width: 70ch; }
-  .detail { margin: 10px 0 0; font-size: 17px; max-width: 70ch; }
+  .purpose { margin: 6px 0 0; color: var(--ink-2); font-size: 17px; max-width: 64ch; }
+  .detail { margin: 8px 0 0; font-size: 17px; max-width: 64ch; }
   .detail code { font-family: inherit; font-weight: 600; background: var(--fail-wash); color: var(--fail); padding: 1px 7px; }
 
-  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-self: center; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
     min-height: 44px; padding: 0 18px;
@@ -233,123 +211,134 @@
   .btn.quiet { border-color: transparent; border-bottom-color: var(--rule); color: var(--ink-2); padding: 0 12px; }
   .btn.quiet:hover { border-bottom-color: var(--ink); background: transparent; }
 
-  /* ---------- sections ---------- */
-  .section { margin-top: 56px; }
+  /* ---------- level 2: today's runs ---------- */
+  .section { margin-top: var(--s12); }
   .section-head {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); flex-wrap: wrap;
     padding-bottom: 12px;
-    border-bottom: 2px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
   }
-  .section-head h3 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
-  .section-head .sum { margin: 0; color: var(--ink-2); font-size: 16px; }
+  .section-head h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .section-head .sum { margin: 0; color: var(--ink-3); font-size: 15px; }
   .section-head .sum b { color: var(--ink); font-weight: 600; }
 
-  /* ---------- the day strip ---------- */
-  .strip { position: relative; margin-top: 26px; height: 128px; }
-  .strip .hum { position: absolute; left: 0; right: 0; top: 48px; height: 36px; width: 100%; }
-  .strip .axis { position: absolute; left: 0; right: 0; top: 84px; height: 2px; background: var(--ink); }
+  .strip { position: relative; margin-top: var(--s4); height: 118px; }
+  .strip .hum { position: absolute; left: 0; right: 0; top: 44px; height: 32px; width: 100%; }
+  .strip .axis { position: absolute; left: 0; right: 0; top: 76px; height: 1px; background: var(--ink); }
   .strip .hour {
-    position: absolute; top: 84px; transform: translateX(-50%);
-    font-size: 14px; color: var(--ink-3); font-weight: 500;
+    position: absolute; top: 76px; transform: translateX(-50%);
+    font-size: 13px; color: var(--ink-3); font-weight: 500;
     padding-top: 12px;
   }
   .strip .hour::before {
-    content: ""; position: absolute; top: 0; left: 50%; width: 2px; height: 8px; background: var(--ink);
+    content: ""; position: absolute; top: 0; left: 50%; width: 1px; height: 7px; background: var(--ink);
     transform: translateX(-50%);
   }
   .strip .hour.first { transform: none; }
-  .strip .hour.first::before { left: 1px; transform: none; }
+  .strip .hour.first::before { left: 0; transform: none; }
   .strip .hour.last { transform: translateX(-100%); }
   .strip .hour.last::before { left: auto; right: 0; transform: none; }
-
-  .run { position: absolute; top: 54px; width: 10px; height: 32px; transform: translateX(-50%); background: var(--ink); }
-  .run.todo { background: var(--paper); border: 2px solid var(--ink); }
-  .now { position: absolute; top: 10px; bottom: 44px; width: 2px; background: var(--ink); transform: translateX(-50%); }
+  .run { position: absolute; top: 48px; width: 8px; height: 28px; transform: translateX(-50%); background: var(--ink); }
+  .run.todo { background: var(--paper); border: 1.5px solid var(--ink); }
+  .now { position: absolute; top: 8px; bottom: 42px; width: 1.5px; background: var(--ink); transform: translateX(-50%); }
   .now .lbl {
     position: absolute; top: -4px; left: 10px; white-space: nowrap;
-    font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
   }
-  .now .lbl span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-2); margin-left: 6px; }
+  .now .lbl span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-3); margin-left: 6px; }
   .now::after {
-    content: ""; position: absolute; top: -1px; left: 50%; width: 12px; height: 12px;
+    content: ""; position: absolute; top: -1px; left: 50%; width: 10px; height: 10px;
     background: var(--ink); border-radius: 50%; transform: translate(-50%, -50%);
   }
 
   .legend {
-    list-style: none; margin: 20px 0 0; padding: 0;
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 24px;
-    font-size: 16px;
+    list-style: none; margin: var(--s2) 0 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 8px var(--s4);
+    font-size: 15px; color: var(--ink-2);
   }
-  .legend li { display: flex; align-items: flex-start; gap: 10px; line-height: 1.35; }
-  .legend li .g { margin-top: 2px; }
-  .legend li.wide { grid-column: 1 / -1; margin-top: 4px; }
-  .legend .g { width: 10px; height: 18px; background: var(--ink); flex: none; }
-  .legend .g.todo { background: var(--paper); border: 2px solid var(--ink); }
+  .legend li { display: inline-flex; align-items: center; gap: 9px; }
+  .legend .g { width: 7px; height: 15px; background: var(--ink); flex: none; }
+  .legend .g.todo { background: var(--paper); border: 1.5px solid var(--ink); }
   .legend .g.hum {
-    width: 28px; height: 14px; border: 0; background:
-      repeating-linear-gradient(to bottom, transparent 0 2px, var(--ink-3) 2px 3px, transparent 3px 5px);
+    width: 22px; height: 11px; border: 0; background:
+      repeating-linear-gradient(to bottom, transparent 0 1px, var(--ink-3) 1px 2px, transparent 2px 4px);
     opacity: .9;
   }
-  .legend time { font-weight: 600; margin-right: 4px; }
-  .legend .q { display: block; color: var(--ink-3); font-size: 15px; margin-top: 1px; }
-  .legend li.wide .q { display: inline; margin-left: 8px; }
-  .legend li.wide .q::before { content: "— "; }
+  .legend time { font-weight: 600; color: var(--ink); margin-right: 2px; }
+  .legend li.wide { flex-basis: 100%; }
 
-  /* ---------- agents table ---------- */
-  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-  th, td { text-align: left; padding: 16px 14px 16px 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
-  th { font-size: 14px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; padding-top: 14px; padding-bottom: 10px; }
+  /* ---------- level 3: agents and daemons, folded to a line ---------- */
+  .quiet-section { margin-top: var(--s8); border-top: 1px solid var(--rule); }
+  .quiet-section + .quiet-section { margin-top: 0; }
+  .quiet-section > summary {
+    list-style: none; cursor: pointer;
+    display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: var(--s3); align-items: baseline;
+    padding: var(--s3) 0;
+  }
+  .quiet-section > summary::-webkit-details-marker { display: none; }
+  .quiet-section > summary h3 { margin: 0; font-size: 18px; font-weight: 600; }
+  .quiet-section > summary p { margin: 0; color: var(--ink-2); font-size: 16px; }
+  .quiet-section > summary p b { color: var(--ink); font-weight: 600; }
+  .quiet-section > summary .disc { font-size: 14px; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+  .quiet-section > summary .disc::before { content: "Show all"; }
+  .quiet-section[open] > summary .disc::before { content: "Hide"; }
+  .quiet-section > summary:hover .disc { color: var(--ink); }
+  .quiet-section > summary:focus-visible { outline-offset: 0; }
+  .quiet-body { padding: 0 0 var(--s4); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 14px 14px 14px 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  th { font-size: 12px; font-weight: 600; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; padding-top: 0; padding-bottom: 10px; }
   th:last-child, td:last-child { text-align: right; padding-right: 0; }
-  td.c-state { width: 36px; padding-right: 0; padding-top: 22px; }
-  td.c-job .name { font-weight: 700; font-size: 18px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  td.c-job .purpose { font-size: 16px; margin-top: 2px; }
-  td.c-when { white-space: nowrap; width: 190px; }
-  td.c-when .sub { display: block; color: var(--ink-2); font-size: 15px; }
-  td.c-cost { width: 100px; font-weight: 600; }
+  td.c-state { width: 28px; padding-right: 0; padding-top: 19px; }
+  td.c-job .name { font-weight: 600; font-size: 16px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  td.c-job .name .domain { font-size: 13.5px; }
+  td.c-job .purpose { font-size: 15px; margin-top: 1px; color: var(--ink-3); }
+  td.c-when { white-space: nowrap; width: 160px; font-size: 15px; }
+  td.c-when .sub { display: block; color: var(--ink-3); font-size: 14px; }
+  td.c-cost { width: 90px; font-weight: 600; font-size: 15px; }
   td .nil { color: var(--ink-3); font-weight: 400; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .dot.ok { background: var(--ink); }
-  .dot.todo { border: 2px solid var(--ink); background: transparent; }
-  tr.script td { border-bottom: 0; border-top: 2px solid var(--ink); }
-  tr.script .tag { font-size: 14px; font-weight: 600; color: var(--ink-3); letter-spacing: .03em; text-transform: uppercase; }
+  .dot.todo { border: 1.5px solid var(--ink); background: transparent; }
+  tr.script td { border-bottom: 0; }
+  tr.script .tag { font-size: 12px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-  /* ---------- cast list ---------- */
-  .cast { margin: 22px 0 0; padding: 0; font-size: 18px; line-height: 1.75; }
+  .cast { margin: 0; padding: 0; font-size: 16px; line-height: 1.8; color: var(--ink-2); }
   .cast dt, .cast dd { display: inline; margin: 0; }
-  .cast dt { font-weight: 700; }
+  .cast dt { font-weight: 600; }
   .cast dt::after { content: " — "; color: var(--ink-3); font-weight: 400; }
   .cast dd + dt::before { content: "  ·  "; color: var(--ink-3); white-space: pre; }
-  .cast a.more { font-weight: 600; text-underline-offset: 3px; }
+  .cast a.more { font-weight: 500; color: var(--ink); text-underline-offset: 3px; }
 
   @media (prefers-reduced-motion: reduce) {
     .live i { animation: none; }
-    .digs-art { transition: none; }
-    .digs-art:hover { transform: none; }
+    .digs svg { transition: none; }
+    .digs:hover svg { transform: none; }
   }
 
   /* =========================================================
      phone: the margin column folds into a top drawer
      ========================================================= */
   @media (max-width: 760px) {
-    :root { --gutter: 16px; }
     .frame { display: block; }
     .side { border-right: 0; border-bottom: 2px solid var(--ink); }
     .side-in {
       position: relative; min-height: 0; max-height: none; overflow: visible;
       display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center;
-      gap: 0 10px; padding: 12px var(--gutter) 12px;
+      gap: 0 10px; padding: 12px 16px 12px;
     }
     .corner { grid-column: 1; grid-row: 1; gap: 10px; padding: 0; }
-    .corner .digs-mark { width: 44px; height: 44px; }
+    .corner .digs-mark { width: 42px; }
     .wordmark { font-size: 22px; }
     .where { margin-top: 3px; font-size: 13px; }
-    .jump { grid-column: 2; grid-row: 1; margin: 0; width: 40px; height: 40px; padding: 0; justify-content: center; }
+    .jump { grid-column: 2; grid-row: 1; margin: 0 84px 0 0; width: 40px; height: 40px; padding: 0; justify-content: center; }
     .jump .t, .jump kbd { display: none; }
     .drawer { grid-column: 1 / -1; grid-row: 2; }
     .drawer summary {
       display: inline-flex; align-items: center; justify-content: center;
-      position: absolute; right: var(--gutter); top: 12px;
+      position: absolute; right: 16px; top: 12px;
       height: 40px; padding: 0 12px;
       border: 2px solid var(--ink); background: var(--paper-raised);
       font-weight: 600; font-size: 15px; cursor: pointer; list-style: none; user-select: none;
@@ -357,48 +346,44 @@
     .drawer summary::-webkit-details-marker { display: none; }
     .drawer summary::after { content: "Menu"; }
     .drawer[open] summary::after { content: "Close"; }
-    .jump { margin-right: 84px; }
     .drawer[open] { padding-top: 8px; }
     .side h4 { margin: 16px 0 4px; padding: 0 12px; }
     .side h4:first-of-type { margin-top: 8px; }
     .row { height: 40px; }
     .row.filter { height: 38px; }
     .side-foot { grid-column: 1 / -1; grid-row: 3; display: none; }
-    .drawer[open] ~ .side-foot { display: flex; padding-top: 12px; justify-content: flex-start; }
+    .drawer[open] ~ .side-foot { display: flex; padding-top: 12px; }
 
-    .page { padding-top: 24px; max-width: none; }
-    .hero { padding: 20px 18px 18px; }
-    .hero-in { min-height: 0; }
-    .hero h2 { font-size: 40px; margin-bottom: 12px; }
+    .page { padding: var(--s4) 16px var(--s8); }
+    .splash { padding-bottom: 0; }
+    .splash-in { min-height: 0; }
+    .splash h2 { font-size: 40px; margin-bottom: 12px; }
     .verdict { font-size: 18px; line-height: 27px; }
-    .digs-stage { position: static; margin: 8px 0 0; text-align: left; }
-    .digs-art { width: 176px; height: 176px; margin-left: -12px; }
-    .preview { justify-content: flex-start; margin: -14px 0 0; flex-wrap: wrap; }
-    .problem { grid-template-columns: 1fr; padding: 20px 18px; gap: 18px; margin-top: 30px; }
-    .caption { font-size: 13px; }
-    .job-title { font-size: 23px; }
-    .actions { display: grid; grid-template-columns: 1fr 1fr; align-self: stretch; }
+    .digs { position: static; margin: var(--s2) 0 0 -6px; }
+    .incident { grid-template-columns: 1fr; padding: var(--s3) 18px; gap: 18px; margin-top: var(--s4); }
+    .job-title { font-size: 22px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; }
     .actions .btn.primary { grid-column: 1 / -1; }
-    .section { margin-top: 44px; }
-    .strip { height: 124px; }
+    .section { margin-top: var(--s8); }
+    .strip { height: 114px; }
     .strip .hour.mid { display: none; }
-    .legend { grid-template-columns: 1fr; gap: 8px; }
+    .legend { flex-direction: column; gap: 6px; }
+    .quiet-section { margin-top: var(--s6); }
+    .quiet-section > summary { grid-template-columns: 1fr auto; }
+    .quiet-section > summary p { grid-column: 1 / -1; }
+    .quiet-body { padding-left: 0; }
 
     table, thead, tbody, tr, td, th { display: block; }
     thead { display: none; }
-    tr { position: relative; padding: 16px 0 16px 28px; border-bottom: 1px solid var(--rule); }
+    tr { position: relative; padding: 14px 0 14px 24px; border-bottom: 1px solid var(--rule); }
     td { border: 0; padding: 0; width: auto; }
-    td.c-state { position: absolute; left: 0; top: 22px; padding: 0; width: auto; }
-    td.c-job .name { font-size: 18px; }
-    td.c-when, td.c-cost { display: inline-block; width: auto; text-align: left; margin-top: 8px; margin-right: 22px; font-size: 15px; white-space: normal; }
+    td.c-state { position: absolute; left: 0; top: 19px; padding: 0; width: auto; }
+    td.c-when, td.c-cost { display: inline-block; width: auto; text-align: left; margin-top: 6px; margin-right: 20px; font-size: 14px; white-space: normal; }
     td.c-when .sub { display: inline; }
     td.c-when .sub::before { content: " · "; color: var(--ink-3); }
     td.c-when::before, td.c-cost::before { content: attr(data-label) " "; color: var(--ink-3); font-weight: 500; }
-    td.c-cost { font-weight: 600; }
     td.c-cost.nil-cell { display: none; }
-    tr.script { border-top: 2px solid var(--ink); border-bottom: 0; }
-    tr.script td { border: 0; }
-    .cast { font-size: 17px; }
+    tr.script { border-bottom: 0; }
   }
 </style>
 </head>
@@ -409,7 +394,7 @@
   <aside class="side" aria-label="Kennel navigation">
     <div class="side-in">
       <div class="corner">
-        <img class="digs-mark" src="digs-head.png" width="52" height="52" alt="Digs">
+        <svg class="digs-mark" viewBox="-1 22 258 212" role="img" aria-label="Digs"><g transform="translate(0.000000,256.000000) scale(0.100000,-0.100000)"><path fill="currentColor" d="M1265 2276 c-256 -51 -397 -170 -570 -480 -89 -160 -143 -193 -412 -246 -214 -42 -259 -82 -234 -204 68 -327 285 -492 681 -516 261 -15 344 -98 424 -422 33 -132 41 -152 55 -129 17 27 -52 269 -107 374 -82 157 -190 217 -393 217 -265 0 -480 119 -570 315 -30 65 -26 76 23 69 72 -9 175 65 206 146 11 28 -8 90 -28 90 -30 0 -5 30 33 40 208 54 269 97 354 255 175 323 344 447 633 462 176 9 363 -36 490 -117 57 -36 68 -70 24 -70 -34 0 -99 -37 -112 -64 -6 -11 -13 -68 -15 -126 -4 -85 -16 -148 -61 -326 -87 -341 -104 -507 -71 -669 74 -357 344 -413 617 -127 224 235 312 405 275 533 -18 59 -194 366 -313 545 -224 338 -592 516 -929 450z m741 -281 c61 -36 142 -145 284 -382 243 -406 245 -430 54 -683 -196 -260 -344 -356 -495 -320 -137 33 -209 179 -209 426 0 147 14 231 87 529 46 186 57 248 58 322 2 58 7 98 15 108 34 41 137 41 206 0z M1131 1977 c-14 -18 -4 -27 31 -27 44 0 92 -24 121 -61 22 -29 27 -31 33 -16 20 52 -149 146 -185 104z M1056 1745 c-53 -49 -62 -125 -20 -174 49 -58 130 -22 154 69 26 97 -65 169 -134 105z M760 1103 c-33 -33 -93 -63 -143 -71 -57 -10 -59 -38 -2 -35 74 5 209 92 191 122 -10 15 -17 13 -46 -16z"/></g></svg>
         <div class="corner-text">
           <h1 class="wordmark">Kennel</h1>
           <p class="where"><span>Tuesday, Oct 6</span><span class="sep"> · </span><span>Mac Mini · 60 jobs</span></p>
@@ -457,6 +442,13 @@
 
       <div class="side-foot">
         <span class="live"><i aria-hidden="true"></i>live</span>
+        <div class="preview" aria-label="Preview Digs in each state">
+          <span>Digs</span>
+          <button type="button" data-set="quiet" aria-pressed="false">quiet</button>
+          <button type="button" data-set="alert" aria-pressed="false">alert</button>
+          <button type="button" data-set="missed" aria-pressed="false">missed</button>
+          <button type="button" data-set="failed" aria-pressed="true">failed</button>
+        </div>
       </div>
     </div>
   </aside>
@@ -464,29 +456,18 @@
   <!-- ============ the page ============ -->
   <main class="page">
 
-    <!-- splash panel: Digs reacts, the verdict flows around him -->
-    <section class="hero" id="today" aria-labelledby="state">
-      <div class="hero-in">
-        <div class="hero-text">
-          <h2 id="state"><span class="count">One</span> problem.</h2>
-          <p class="verdict" id="verdict"><strong>Agent sync failed and has not run since.</strong> The other 59 jobs are fine: 16 daemons up, 34 scheduled jobs on time, and $2.31 of agent spend this month.</p>
-        </div>
-        <div class="digs-stage">
-          <img class="digs-art" id="digs" src="digs-failed.png" width="236" height="236" alt="Digs, barking: something failed" data-state="failed">
-          <div class="preview" aria-label="Preview Digs in each state">
-            <span>Digs</span>
-            <button type="button" data-set="quiet" aria-pressed="false">quiet</button>
-            <button type="button" data-set="alert" aria-pressed="false">alert</button>
-            <button type="button" data-set="missed" aria-pressed="false">missed</button>
-            <button type="button" data-set="failed" aria-pressed="true">failed</button>
-          </div>
-        </div>
+    <!-- level 1: verdict, Digs on the ground rule, the incident -->
+    <section class="splash" id="today" aria-labelledby="state">
+      <div class="splash-in">
+        <h2 id="state"><span class="count">One</span> problem.</h2>
+        <p class="verdict" id="verdict"><strong>Agent sync failed and has not run since.</strong> The other 59 jobs are fine: 16 daemons up, 34 scheduled jobs on time, and $2.31 of agent spend this month.</p>
+        <div class="digs" id="digs" role="img" aria-label="Digs, barking: something failed" data-state="failed"></div>
       </div>
     </section>
 
-    <article class="problem" aria-label="Agent sync, failed">
+    <article class="incident" aria-label="Agent sync, failed">
+      <span class="caption"><span class="mark" aria-hidden="true"></span>Failed</span>
       <div>
-        <span class="caption"><span class="mark" aria-hidden="true"></span>Failed</span>
         <h3 class="job-title">Agent sync <a class="domain dom-kit" href="#kit">Kit</a></h3>
         <p class="purpose">Regenerates every agent instruction file from the canonical sources.</p>
         <p class="detail">The last run exited with <code>code 3</code> and it has not run since.</p>
@@ -498,25 +479,25 @@
       </div>
     </article>
 
-    <!-- the day as one strip -->
+    <!-- level 2: today's runs -->
     <section class="section" id="scheduled" aria-labelledby="h-today">
       <div class="section-head">
-        <h3 id="h-today">Today, midnight to midnight</h3>
-        <p class="sum"><b>35 scheduled jobs.</b> All on time except agent sync, above.</p>
+        <h3 id="h-today">Today's runs</h3>
+        <p class="sum"><b>35 scheduled jobs</b> · 34 on time · 1 failed, above</p>
       </div>
 
       <div class="strip" role="img" aria-label="Timeline of today's scheduled runs. Completed: 3:30am activity digest; 5:00am Kit rebuild and CRM contacts. Now is about 10:00am. Upcoming: 1:00pm changelog; 9:00pm memory distillation. Fourteen jobs on 5, 15 and 30 minute loops have run all morning without a problem.">
         <svg class="hum" aria-hidden="true">
           <defs>
             <pattern id="hum-ink" width="36" height="9" patternUnits="userSpaceOnUse">
-              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".45" stroke-width="1.2"/>
+              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".4" stroke-width="1.1"/>
             </pattern>
             <pattern id="hum-faint" width="36" height="9" patternUnits="userSpaceOnUse">
-              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".14" stroke-width="1.2" stroke-dasharray="3 4"/>
+              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".13" stroke-width="1.1" stroke-dasharray="3 4"/>
             </pattern>
           </defs>
-          <rect x="0" y="0" width="41.67%" height="36" fill="url(#hum-ink)"/>
-          <rect x="41.67%" y="0" width="58.33%" height="36" fill="url(#hum-faint)"/>
+          <rect x="0" y="0" width="41.67%" height="32" fill="url(#hum-ink)"/>
+          <rect x="41.67%" y="0" width="58.33%" height="32" fill="url(#hum-faint)"/>
         </svg>
 
         <div class="axis"></div>
@@ -537,129 +518,135 @@
       </div>
 
       <ul class="legend">
-        <li><span class="g" aria-hidden="true"></span><span><time>3:30am</time>activity digest<span class="q">succeeded</span></span></li>
-        <li><span class="g" aria-hidden="true"></span><span><time>5:00am</time>Kit rebuild, CRM contacts<span class="q">succeeded</span></span></li>
-        <li><span class="g todo" aria-hidden="true"></span><span><time>1:00pm</time>Claude Code changelog<span class="q">first run</span></span></li>
-        <li><span class="g todo" aria-hidden="true"></span><span><time>9:00pm</time>memory distillation<span class="q">first run</span></span></li>
-        <li class="wide"><span class="g hum" aria-hidden="true"></span><span>14 jobs on 5-, 15- and 30-minute loops<span class="q">all fine, running since midnight</span></span></li>
+        <li><span class="g" aria-hidden="true"></span><span><time>3:30am</time> activity digest</span></li>
+        <li><span class="g" aria-hidden="true"></span><span><time>5:00am</time> Kit rebuild, CRM contacts</span></li>
+        <li><span class="g todo" aria-hidden="true"></span><span><time>1:00pm</time> Claude Code changelog, first run</span></li>
+        <li><span class="g todo" aria-hidden="true"></span><span><time>9:00pm</time> memory distillation, first run</span></li>
+        <li class="wide"><span class="g hum" aria-hidden="true"></span><span>14 jobs on 5-, 15- and 30-minute loops, all fine since midnight</span></li>
       </ul>
     </section>
 
-    <!-- agents -->
-    <section class="section" id="agents" aria-labelledby="h-agents">
-      <div class="section-head">
-        <h3 id="h-agents">Agents</h3>
-        <p class="sum">Scheduled AI runs that cost money. <b>October so far: $2.31</b>, one run.</p>
+    <!-- level 3: agents and daemons, each folded to one line -->
+    <details class="quiet-section" id="agents">
+      <summary>
+        <h3>Agents</h3>
+        <p><b>6 scheduled.</b> October so far $2.31, one run (Daily Briefing, Mon). Next up: Claude Code Changelog today at 1:00pm, its first run.</p>
+        <span class="disc" aria-hidden="true"></span>
+      </summary>
+      <div class="quiet-body">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr">State</span></th>
+              <th scope="col">Agent</th>
+              <th scope="col">Last run</th>
+              <th scope="col">Next</th>
+              <th scope="col">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
+              <td class="c-job">
+                <div class="name">Daily Briefing <a class="domain dom-kit" href="#kit">Kit</a></div>
+                <p class="purpose">Texts you what matters today.</p>
+              </td>
+              <td class="c-when" data-label="Last run">Mon 12:35pm<span class="sub">test run · 4m 03s</span></td>
+              <td class="c-when" data-label="Next">Wed 4:55am</td>
+              <td class="c-cost" data-label="Cost">$2.31</td>
+            </tr>
+            <tr>
+              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+              <td class="c-job">
+                <div class="name">Claude Code Changelog <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
+                <p class="purpose">Reads each new release and notes what's worth adopting.</p>
+              </td>
+              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+              <td class="c-when" data-label="Next">Today 1:00pm<span class="sub">first run</span></td>
+              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+            </tr>
+            <tr>
+              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+              <td class="c-job">
+                <div class="name">Memory Distillation <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
+                <p class="purpose">Turns the day's log into lasting memory.</p>
+              </td>
+              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+              <td class="c-when" data-label="Next">Today 9:00pm<span class="sub">first run</span></td>
+              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+            </tr>
+            <tr>
+              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+              <td class="c-job">
+                <div class="name">Weekly Review <a class="domain dom-kit" href="#kit">Kit</a></div>
+                <p class="purpose">Catches you up on the whole week if it's the only thing you read.</p>
+              </td>
+              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+              <td class="c-when" data-label="Next">Fri 4:00pm</td>
+              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+            </tr>
+            <tr>
+              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+              <td class="c-job">
+                <div class="name">Project Refresh <a class="domain dom-kit" href="#kit">Kit</a></div>
+              </td>
+              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+              <td class="c-when" data-label="Next">Sun 9:00am</td>
+              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+            </tr>
+            <tr>
+              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
+              <td class="c-job">
+                <div class="name">Maven Watch <a class="domain dom-home" href="#home">Home and family</a></div>
+              </td>
+              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
+              <td class="c-when" data-label="Next">Nov 1, 1:00pm</td>
+              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
+            </tr>
+            <tr class="script">
+              <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
+              <td class="c-job">
+                <div class="name">Alice Payroll <a class="domain dom-home" href="#home">Home and family</a> <span class="tag">script, no AI</span></div>
+                <p class="purpose">Submits nanny payroll from the calendar.</p>
+              </td>
+              <td class="c-when" data-label="Last run">Mon 12:12pm<span class="sub">by hand</span></td>
+              <td class="c-when" data-label="Next">Mon 9:00am</td>
+              <td class="c-cost" data-label="Cost"><span class="nil">none</span></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th scope="col"><span class="sr">State</span></th>
-            <th scope="col">Agent</th>
-            <th scope="col">Last run</th>
-            <th scope="col">Next</th>
-            <th scope="col">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
-            <td class="c-job">
-              <div class="name">Daily Briefing <a class="domain dom-kit" href="#kit">Kit</a></div>
-              <p class="purpose">Texts you what matters today.</p>
-            </td>
-            <td class="c-when" data-label="Last run">Mon 12:35pm<span class="sub">test run · 4m 03s</span></td>
-            <td class="c-when" data-label="Next">Wed 4:55am</td>
-            <td class="c-cost" data-label="Cost">$2.31</td>
-          </tr>
-          <tr>
-            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-            <td class="c-job">
-              <div class="name">Claude Code Changelog <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
-              <p class="purpose">Reads each new release and notes what's worth adopting.</p>
-            </td>
-            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-            <td class="c-when" data-label="Next">Today 1:00pm<span class="sub">first run</span></td>
-            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-          </tr>
-          <tr>
-            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-            <td class="c-job">
-              <div class="name">Memory Distillation <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
-              <p class="purpose">Turns the day's log into lasting memory.</p>
-            </td>
-            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-            <td class="c-when" data-label="Next">Today 9:00pm<span class="sub">first run</span></td>
-            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-          </tr>
-          <tr>
-            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-            <td class="c-job">
-              <div class="name">Weekly Review <a class="domain dom-kit" href="#kit">Kit</a></div>
-              <p class="purpose">Catches you up on the whole week if it's the only thing you read.</p>
-            </td>
-            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-            <td class="c-when" data-label="Next">Fri 4:00pm</td>
-            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-          </tr>
-          <tr>
-            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-            <td class="c-job">
-              <div class="name">Project Refresh <a class="domain dom-kit" href="#kit">Kit</a></div>
-            </td>
-            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-            <td class="c-when" data-label="Next">Sun 9:00am</td>
-            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-          </tr>
-          <tr>
-            <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-            <td class="c-job">
-              <div class="name">Maven Watch <a class="domain dom-home" href="#home">Home and family</a></div>
-            </td>
-            <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-            <td class="c-when" data-label="Next">Nov 1, 1:00pm</td>
-            <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-          </tr>
-          <tr class="script">
-            <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
-            <td class="c-job">
-              <div class="name">Alice Payroll <a class="domain dom-home" href="#home">Home and family</a> <span class="tag">script, no AI</span></div>
-              <p class="purpose">Submits nanny payroll from the calendar.</p>
-            </td>
-            <td class="c-when" data-label="Last run">Mon 12:12pm<span class="sub">by hand</span></td>
-            <td class="c-when" data-label="Next">Mon 9:00am</td>
-            <td class="c-cost" data-label="Cost"><span class="nil">none</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+    </details>
 
-    <!-- daemons as a cast list -->
-    <section class="section" id="daemons" aria-labelledby="h-daemons">
-      <div class="section-head">
-        <h3 id="h-daemons">Daemons</h3>
-        <p class="sum"><b>16 up.</b> None down, none flapping.</p>
+    <details class="quiet-section" id="daemons">
+      <summary>
+        <h3>Daemons</h3>
+        <p><b>16 up.</b> None down, none flapping.</p>
+        <span class="disc" aria-hidden="true"></span>
+      </summary>
+      <div class="quiet-body">
+        <dl class="cast">
+          <dt class="dom-kit">Kit</dt>
+          <dd>Kit on iMessage, Kit gateway, Kit email, Message filter</dd>
+          <dt class="dom-vault">Vault and memory</dt>
+          <dd>Content vault sync</dd>
+          <dt class="dom-anth">Anthimeros</dt>
+          <dd>Agent runner</dd>
+          <dt class="dom-home">Home and family</dt>
+          <dd>Bike garage door</dd>
+          <dt class="dom-mac">Mac</dt>
+          <dd>AirDrop watchdog, <a class="more" href="#all-daemons">and 8 more</a></dd>
+        </dl>
       </div>
-      <dl class="cast">
-        <dt class="dom-kit">Kit</dt>
-        <dd>Kit on iMessage, Kit gateway, Kit email, Message filter</dd>
-        <dt class="dom-vault">Vault and memory</dt>
-        <dd>Content vault sync</dd>
-        <dt class="dom-anth">Anthimeros</dt>
-        <dd>Agent runner</dd>
-        <dt class="dom-home">Home and family</dt>
-        <dd>Bike garage door</dd>
-        <dt class="dom-mac">Mac</dt>
-        <dd>AirDrop watchdog, <a class="more" href="#all-daemons">and 8 more</a></dd>
-      </dl>
-    </section>
+    </details>
 
   </main>
 </div>
 
 <script>
-/* ---------- Digs: one drawing per state. ---------- */
+/* ---------- Digs: four drawings vectorized from the originals; ink is currentColor so he matches the page. ---------- */
 (function () {
+  const ART = {"quiet":{"vb":[63,130,345,217],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1695 3443 c-16 -1 -54 -6 -82 -9 -38 -4 -53 -10 -53 -21 0 -12 12 -14 75 -8 93 9 94 7 14 -103 -83 -113 -82 -118 6 -113 95 4 151 15 145 26 -3 6 -39 9 -82 7 -97 -3 -97 -2 -13 112 63 86 73 120 31 115 -6 -1 -24 -4 -41 -6z M2765 3003 c-152 -20 -325 -71 -502 -149 -146 -65 -120 -64 -234 -5 -276 145 -557 126 -796 -53 -142 -107 -223 -263 -238 -460 -8 -106 -28 -132 -175 -241 -173 -127 -181 -197 -36 -315 63 -50 62 -49 40 -92 -72 -140 116 -261 330 -214 l77 18 33 -30 c71 -62 273 -90 368 -50 49 20 75 22 358 28 305 6 305 6 373 34 65 26 70 27 152 17 46 -6 107 -7 134 -4 45 5 59 2 118 -29 271 -141 695 -145 973 -9 102 50 208 153 252 247 49 102 49 238 0 336 -22 46 -31 74 -27 91 9 35 -12 165 -39 245 -114 335 -394 560 -780 627 -81 14 -300 19 -381 8z m287 -33 c371 -35 657 -214 794 -495 152 -315 91 -585 -160 -704 -119 -57 -168 -66 -346 -65 -255 1 -333 31 -390 149 -147 301 53 609 376 581 100 -8 105 15 8 33 -111 21 -276 -38 -356 -128 -117 -129 -142 -292 -73 -465 15 -37 24 -70 21 -74 -4 -3 -42 6 -86 21 -129 44 -219 34 -268 -28 -28 -36 -38 -32 -57 25 -28 84 -56 83 -31 -1 33 -109 16 -192 -53 -261 -76 -76 -113 -83 -430 -80 -257 2 -266 1 -336 -23 -95 -33 -215 -35 -245 -5 -34 34 -23 95 24 132 31 24 11 35 -22 11 -35 -26 -52 -59 -52 -105 0 -43 -4 -44 -60 -22 -25 10 -47 28 -56 46 -11 20 -19 27 -27 20 -37 -28 -212 -43 -235 -20 -7 7 -12 31 -12 53 0 56 28 85 80 85 21 0 41 4 45 9 3 6 49 34 102 63 98 54 208 142 197 159 -3 5 -27 -8 -52 -29 -62 -51 -123 -92 -200 -132 -80 -42 -141 -39 -249 15 -63 31 -96 65 -63 65 16 0 90 71 106 101 32 62 5 127 -61 149 -47 16 -44 27 25 82 99 80 112 104 121 217 22 281 211 489 499 547 134 27 360 7 360 -31 0 -8 -8 -15 -17 -15 -27 -1 -103 -37 -103 -50 0 -6 13 -3 33 7 54 29 178 24 250 -9 147 -69 388 -420 403 -589 21 -231 -131 -439 -321 -439 -199 0 -281 146 -305 545 -16 264 -47 415 -86 415 -17 0 -18 5 6 -62 19 -54 29 -139 50 -423 10 -136 35 -256 65 -316 34 -64 27 -69 -134 -115 -52 -14 -108 -32 -125 -40 l-31 -13 41 -1 c22 0 87 14 145 31 154 45 154 45 190 15 205 -173 494 -9 539 304 21 146 -95 398 -274 597 -25 28 -46 55 -46 61 0 12 150 81 260 120 148 52 322 85 480 91 19 0 83 -4 142 -9z m923 -970 c3 -5 10 -37 16 -70 34 -215 -104 -403 -361 -492 -186 -64 -536 -65 -735 -1 -202 64 -354 213 -319 311 31 86 135 90 339 13 218 -82 268 -93 430 -94 278 -2 485 101 571 281 28 58 45 74 59 52z m-3032 -316 c53 -18 55 -21 27 -66 -11 -18 -20 -48 -20 -65 0 -41 -25 -44 -68 -8 -37 31 -48 73 -32 120 13 40 25 42 93 19z m1621 -51 c8 -16 28 -41 45 -57 45 -43 40 -56 -18 -56 -110 0 -127 13 -91 72 11 18 20 41 20 51 0 27 28 20 44 -10z M1502 2299 c-51 -63 -148 -78 -212 -31 -39 29 -53 7 -16 -24 72 -62 206 -41 260 40 33 52 6 64 -32 15z","left":[-1,-1,108,92,91,92,105,104,103,101,100,98,97,95,94,94,95,-1,-1,-1,-1,-1,-1,-1,215,202,193,98,86,79,74,70,66,63,60,58,55,53,51,50,48,47,45,44,43,42,41,40,39,38,38,37,37,36,36,36,36,36,35,35,35,35,34,33,31,29,27,25,22,19,17,14,11,9,7,6,5,4,4,4,4,5,6,8,9,12,14,16,19,19,18,17,17,17,17,17,18,18,20,22,25,29,37,64,69,78,231,241,-1]},"alert":{"vb":[43,103,414,269],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1601 3709 c-135 -24 -256 -94 -365 -212 -44 -49 -94 -95 -109 -103 -30 -16 -186 -33 -307 -34 -156 0 -212 -87 -164 -251 57 -190 163 -285 408 -365 159 -51 167 -56 207 -137 83 -163 114 -330 97 -512 -5 -60 -7 -156 -4 -212 l6 -101 -33 -28 c-74 -63 -218 -110 -481 -158 -72 -13 -156 -33 -186 -45 -216 -81 -254 -300 -60 -342 19 -4 55 -13 80 -19 33 -8 62 -8 112 0 l68 12 40 -35 c24 -23 53 -38 77 -42 21 -3 57 -10 81 -15 65 -15 129 -12 217 11 71 19 118 22 420 28 362 6 395 11 455 66 13 12 27 12 100 -2 119 -22 335 -21 493 1 l129 19 21 -26 c27 -31 60 -48 112 -58 22 -4 59 -12 83 -18 30 -8 100 -8 240 -1 108 5 249 10 312 10 256 0 368 50 433 191 20 45 26 50 76 65 218 63 357 299 355 604 0 206 -49 344 -143 407 -43 29 -56 29 -87 -2 l-25 -25 7 -148 c9 -211 -24 -340 -109 -430 -41 -43 -50 -41 -71 19 -43 120 -172 275 -295 354 -210 136 -401 159 -801 95 -840 -133 -1208 165 -1024 829 19 67 39 79 49 29 36 -168 137 -387 216 -467 155 -158 309 -123 439 100 113 193 89 285 -118 447 -48 37 -140 115 -205 174 -66 59 -135 114 -155 124 -21 9 -57 36 -82 59 -127 117 -333 176 -509 144z m296 -54 c128 -43 232 -125 159 -125 -14 0 -28 -4 -31 -10 -4 -6 13 -10 43 -10 84 0 150 -39 287 -169 39 -37 122 -108 185 -158 138 -109 160 -141 160 -236 0 -55 -6 -76 -39 -143 -74 -147 -144 -207 -241 -207 -180 0 -316 226 -404 675 -19 93 -36 172 -40 175 -15 15 -16 -10 -5 -93 l11 -89 -41 -150 c-97 -349 -69 -537 104 -710 192 -193 441 -239 920 -170 311 45 491 46 620 5 311 -99 514 -361 515 -665 0 -206 -73 -340 -208 -379 -61 -18 -754 -45 -807 -32 -44 11 -46 85 -4 127 11 11 18 23 15 26 -13 13 -64 -55 -71 -96 -7 -42 -8 -43 -39 -37 -126 24 -83 209 58 251 88 26 160 20 308 -28 41 -14 85 -6 46 8 -195 68 -273 153 -272 300 0 84 24 145 79 199 45 45 147 96 193 96 17 0 32 5 32 10 0 17 -66 11 -124 -11 -195 -73 -273 -306 -156 -467 40 -55 38 -62 -13 -62 -118 0 -239 -81 -253 -169 -7 -44 -4 -42 -99 -61 -125 -26 -537 -21 -564 5 -3 3 3 18 13 33 45 70 91 202 70 202 -5 0 -21 -33 -36 -73 -53 -139 -128 -207 -253 -227 -33 -5 -184 -10 -335 -10 -259 0 -281 -1 -375 -25 -116 -29 -200 -32 -233 -9 -33 23 -30 75 9 119 32 36 29 46 -7 20 -26 -18 -54 -74 -54 -109 0 -29 -1 -30 -52 -15 -94 26 -87 166 11 233 55 37 130 54 316 71 181 16 337 39 378 54 23 9 145 207 134 218 -6 5 -51 -60 -92 -132 -45 -77 -85 -87 -148 -36 -134 106 -186 236 -171 431 21 277 3 399 -89 594 -52 110 -71 125 -223 174 -213 70 -305 134 -363 255 -52 106 -51 113 8 120 102 12 197 89 186 151 l-7 33 92 11 c121 15 162 36 234 121 135 159 264 219 474 220 96 1 125 -3 189 -24z m2457 -1266 c53 -25 107 -142 127 -279 41 -280 -73 -564 -263 -659 -83 -42 -103 -41 -94 2 16 76 18 149 6 210 l-12 65 46 45 c103 104 141 232 132 451 -7 176 -2 192 58 165z m-2934 -686 c14 -26 49 -73 78 -104 77 -84 97 -74 -219 -104 -86 -8 -185 -24 -220 -35 -105 -32 -189 -121 -189 -198 0 -35 -22 -42 -131 -42 -86 0 -103 14 -96 77 3 27 14 54 28 70 l24 26 -23 -12 c-32 -17 -62 -69 -62 -108 0 -37 -8 -40 -50 -18 -100 52 -38 211 102 263 54 20 78 26 273 63 207 40 363 97 411 150 27 30 47 23 74 -28z M1506 3531 c-3 -5 8 -11 25 -15 17 -3 44 -20 60 -37 17 -19 29 -25 29 -17 0 36 -98 95 -114 69z M1431 3376 c-58 -32 -68 -110 -20 -150 40 -34 54 -33 95 8 44 44 46 86 5 127 -33 32 -45 35 -80 15z M1156 2930 c-16 -10 -47 -22 -68 -25 -22 -4 -35 -11 -32 -17 14 -22 144 26 144 53 0 13 -11 10 -44 -11z","left":[-1,-1,121,110,104,100,96,93,90,87,85,83,81,79,77,76,74,72,69,62,30,26,23,22,21,20,20,20,20,20,20,20,21,21,22,23,23,24,25,26,27,29,30,32,34,36,38,41,44,48,53,59,65,72,77,79,81,82,83,84,85,86,86,87,88,89,89,90,91,91,92,92,92,93,93,93,93,93,94,94,93,93,93,93,93,93,92,92,92,92,92,92,92,92,92,92,92,93,93,92,90,87,84,80,75,69,61,52,41,30,24,19,15,13,10,9,7,6,5,5,4,4,4,5,5,6,8,10,14,22,46,48,51,62,-1]},"missed":{"vb":[50,61,405,346],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1825 4126 c-232 -43 -430 -208 -522 -436 -45 -112 -49 -226 -13 -350 28 -97 5 -162 -108 -301 -122 -150 -126 -170 -46 -247 166 -161 346 -176 598 -50 259 129 330 58 361 -362 16 -212 29 -279 75 -372 l30 -60 0 -182 c0 -195 -16 -578 -25 -606 -3 -9 -27 -27 -54 -39 -95 -43 -155 -142 -131 -215 19 -58 72 -86 161 -86 37 0 54 -6 74 -24 38 -35 113 -49 241 -44 129 4 185 27 219 91 19 35 22 37 73 37 43 0 52 -3 52 -18 0 -28 28 -60 73 -85 58 -30 783 -40 871 -12 96 31 159 103 207 235 13 36 27 67 32 69 5 2 49 30 97 62 239 160 394 440 407 739 10 221 -45 370 -136 370 -55 0 -79 -43 -101 -176 -37 -223 -108 -392 -215 -512 -60 -67 -68 -66 -94 16 -80 246 -216 445 -541 792 -270 290 -486 555 -650 797 l-62 92 30 78 c65 167 80 298 43 378 -54 119 -367 325 -579 382 -192 50 -263 58 -367 39z m185 -40 c0 -8 -8 -21 -18 -28 -56 -40 -64 -86 -27 -158 34 -67 60 -167 90 -355 59 -357 161 -528 336 -560 85 -16 188 51 251 163 38 67 46 66 101 -17 151 -227 370 -495 652 -797 315 -336 442 -522 518 -759 107 -333 41 -691 -143 -774 -55 -24 -759 -30 -783 -6 -27 27 -10 105 25 118 7 2 10 7 6 11 -21 23 -78 -49 -78 -99 0 -54 -84 -20 -96 40 -32 173 194 266 413 169 72 -31 75 -14 4 29 -331 205 -247 737 117 743 92 2 100 5 76 25 -29 24 -130 16 -196 -15 -234 -111 -312 -415 -163 -636 44 -66 44 -70 -7 -70 -49 0 -149 71 -243 171 -64 70 -63 55 -30 279 29 202 29 200 10 200 -8 0 -15 -2 -15 -5 0 -33 -124 -814 -135 -851 -25 -85 -68 -112 -190 -121 -61 -4 -89 -2 -100 7 -24 20 -19 74 11 109 19 23 22 31 11 31 -29 0 -67 -58 -67 -102 l0 -41 -36 6 c-128 21 -86 206 56 248 22 7 46 19 54 28 21 24 36 198 36 426 l0 191 -51 54 c-192 204 -252 345 -269 630 -13 238 -35 327 -95 397 -71 83 -148 84 -307 5 -173 -86 -283 -102 -408 -59 -77 26 -83 40 -41 97 59 82 48 175 -24 201 -43 16 -43 18 1 75 80 106 91 154 61 286 -46 206 7 373 173 539 129 131 259 187 433 188 69 1 87 -2 87 -13z m275 -61 c139 -55 381 -219 437 -295 55 -76 44 -219 -34 -418 -84 -215 -164 -298 -284 -290 -163 10 -251 158 -314 524 -32 189 -60 299 -89 349 -83 144 72 215 284 130z m2112 -1830 c49 -34 82 -226 64 -374 -34 -279 -177 -527 -381 -664 -80 -54 -77 -59 -82 133 l-5 170 66 68 c117 120 201 308 237 536 22 137 47 169 101 131z m-2107 -377 c19 -24 57 -67 84 -96 l49 -53 -11 -272 c-14 -324 -11 -310 -69 -332 -82 -32 -152 -115 -153 -184 0 -23 -2 -23 -71 -19 -81 4 -99 18 -99 75 0 73 36 121 123 163 78 37 79 44 85 433 5 360 4 357 62 285z m598 -618 c89 -86 96 -102 53 -119 -39 -17 -97 -78 -116 -123 -14 -36 -18 -38 -61 -38 -45 0 -46 1 -41 28 3 15 16 96 28 180 19 120 27 152 39 152 8 -1 52 -36 98 -80z M1507 3615 c-37 -21 -26 -36 18 -22 26 7 45 7 76 -2 49 -15 60 -9 26 14 -36 23 -87 28 -120 10z M1565 3425 c-55 -54 14 -187 86 -168 68 18 58 130 -15 174 -39 24 -42 24 -71 -6z M1689 2913 c-6 -16 -20 -38 -31 -50 -32 -35 -12 -41 22 -7 31 31 50 84 31 84 -6 0 -16 -12 -22 -27z M1010 1383 c-159 -15 -271 -46 -308 -86 -20 -22 -152 -362 -152 -392 0 -28 71 -74 152 -100 270 -85 731 -71 932 30 92 46 93 49 17 276 -61 186 -63 190 -100 208 -105 54 -348 83 -541 64z m371 -48 c309 -46 169 -125 -226 -128 -440 -3 -585 92 -210 136 84 10 350 5 436 -8z m-587 -129 c179 -48 519 -49 687 0 105 30 96 38 151 -131 57 -178 57 -184 -19 -218 -222 -98 -763 -97 -963 1 -72 36 -73 43 -8 223 47 132 55 150 73 146 11 -3 47 -12 79 -21z","left":[-1,-1,138,126,120,115,111,108,105,102,100,97,95,93,92,90,88,87,86,84,83,82,81,80,79,79,78,77,77,76,76,76,75,75,75,75,76,76,76,76,77,77,78,78,79,79,79,79,79,78,77,76,75,73,72,70,69,67,65,64,62,60,59,58,57,57,57,57,58,60,62,64,67,69,73,77,82,92,156,156,156,157,157,157,158,158,158,158,158,158,158,159,159,159,159,159,159,159,159,160,160,160,161,161,162,162,163,164,165,166,166,168,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,168,168,168,168,168,168,42,31,25,21,19,17,16,16,15,14,13,13,12,11,10,10,9,8,8,7,6,5,5,4,4,4,6,8,11,16,22,30,45]},"failed":{"vb":[6,72,469,344],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1565 4016 c-173 -34 -301 -117 -398 -261 -61 -90 -49 -86 -247 -83 -259 4 -283 -19 -252 -239 24 -172 109 -237 330 -251 98 -6 101 -13 38 -80 -46 -48 -69 -63 -168 -106 -67 -29 -73 -47 -32 -96 52 -62 145 -93 309 -105 238 -18 271 -54 330 -361 50 -256 97 -385 188 -522 44 -64 59 -182 60 -467 1 -278 -5 -313 -57 -335 -140 -63 -203 -173 -154 -270 35 -70 75 -85 225 -86 122 -2 122 -2 153 -32 46 -47 89 -57 235 -57 286 0 323 61 405 650 11 83 23 164 25 181 l5 31 123 -5 c128 -5 332 15 437 43 87 23 91 22 135 -51 22 -36 70 -95 108 -131 66 -64 67 -66 66 -117 -2 -106 -19 -146 -68 -166 -161 -63 -213 -235 -88 -290 88 -39 273 -34 356 8 61 31 150 220 191 405 15 67 13 66 111 26 88 -35 89 -37 89 -164 l0 -73 -36 -12 c-115 -38 -186 -179 -131 -261 39 -60 83 -74 232 -74 241 0 292 47 345 321 42 217 30 314 -51 416 -83 104 -98 170 -75 332 22 148 20 241 -5 349 l-22 91 24 19 c246 194 358 374 390 627 31 249 -85 480 -213 427 -46 -19 -64 -62 -72 -170 -16 -198 -87 -373 -205 -499 -91 -97 -130 -119 -169 -95 -160 103 -325 145 -627 162 -521 29 -786 91 -966 225 -74 55 -89 82 -65 118 120 185 120 299 -1 520 -214 394 -492 569 -808 508z m258 -52 c87 -19 197 -71 197 -92 0 -8 -8 -21 -17 -28 -21 -14 -14 -18 48 -28 98 -17 251 -217 343 -448 66 -168 6 -327 -203 -533 -245 -241 -446 -123 -446 260 0 160 9 203 81 378 77 188 98 252 91 271 -10 26 -31 6 -47 -46 -7 -24 -36 -99 -66 -168 -103 -243 -132 -402 -100 -559 69 -338 284 -399 530 -149 62 62 93 88 102 82 7 -5 32 -26 56 -46 181 -153 417 -216 943 -253 279 -20 404 -37 495 -69 334 -116 495 -412 431 -796 -25 -153 -8 -229 79 -350 33 -45 63 -98 66 -118 17 -90 -30 -395 -74 -480 -34 -66 -58 -75 -192 -80 l-120 -4 0 47 c0 31 7 56 20 75 25 35 11 48 -18 17 -25 -26 -42 -69 -42 -103 0 -31 -50 -34 -80 -4 -56 56 -13 165 85 216 78 39 88 59 81 157 -9 125 -7 123 -178 201 -266 120 -463 364 -494 612 -7 57 -29 89 -40 59 -11 -27 2 -115 26 -180 39 -108 41 -105 -85 -147 -188 -63 -284 -79 -519 -85 l-209 -6 6 92 c4 50 10 109 13 131 5 32 3 41 -11 46 -26 10 -31 -6 -44 -144 -14 -144 -63 -516 -86 -655 -46 -275 -95 -327 -307 -327 l-98 0 0 49 c0 35 7 58 25 86 27 39 27 52 0 42 -24 -10 -54 -68 -61 -119 -8 -55 -31 -64 -77 -28 -80 63 -31 200 92 258 81 39 84 50 84 272 -1 285 -39 570 -76 570 -18 0 -19 -4 -13 -47 24 -165 21 -169 -69 -112 -210 133 -359 385 -415 704 -61 345 -114 421 -310 445 -44 6 -117 15 -162 20 -90 11 -191 53 -196 82 -2 11 18 26 70 51 96 46 147 92 186 165 42 79 35 85 -101 83 -193 -4 -297 53 -297 163 0 35 1 36 39 36 87 0 191 85 191 155 l0 33 74 4 c91 4 113 18 178 114 135 199 368 284 621 228z m-949 -334 c33 -12 33 -37 1 -52 -58 -26 -162 23 -113 53 18 12 81 11 112 -1z m3695 -439 c71 -71 100 -268 65 -439 -39 -191 -156 -379 -305 -488 -62 -45 -79 -44 -107 9 -12 24 -43 66 -67 94 -57 65 -57 69 14 125 153 122 257 338 280 578 5 54 14 108 20 119 15 28 73 29 100 2z m-2735 -1475 c57 -48 175 -126 192 -126 24 0 45 -334 30 -470 l-7 -65 -66 -35 c-79 -42 -121 -95 -131 -166 l-7 -49 -89 -3 -89 -3 5 57 c4 44 10 62 28 76 16 13 20 22 13 29 -17 17 -71 -54 -78 -106 -9 -54 -40 -62 -74 -19 -56 72 1 191 111 231 27 9 55 25 64 34 25 28 37 187 31 432 -4 160 -3 227 5 227 6 0 34 -20 62 -44z m1645 -111 c46 -73 171 -197 250 -248 l63 -41 -5 -41 c-9 -59 -54 -208 -89 -294 -55 -130 -87 -150 -245 -151 l-83 0 0 39 c0 27 8 49 25 69 26 32 24 47 -6 31 -25 -13 -49 -61 -49 -99 0 -25 -4 -30 -23 -30 -41 0 -67 27 -67 71 0 75 42 125 132 155 58 19 70 39 87 151 14 92 7 112 -73 188 -68 65 -141 166 -134 186 4 12 141 68 168 68 8 0 30 -24 49 -54z M1457 3803 c-13 -12 -7 -23 14 -23 11 0 34 -13 51 -30 33 -34 38 -36 38 -17 0 30 -86 88 -103 70z M1345 3615 c-31 -30 -32 -55 -2 -83 31 -29 61 -28 86 4 27 34 26 50 -4 79 -31 31 -49 31 -80 0z M181 3666 c-14 -17 -18 -15 152 -115 149 -87 152 -88 161 -66 4 11 -28 34 -117 86 -67 39 -136 80 -153 90 -26 16 -33 17 -43 5z M114 3249 c-16 -26 19 -33 159 -34 152 0 180 5 171 30 -8 19 -318 23 -330 4z M355 2919 c-158 -110 -160 -112 -143 -127 15 -12 293 175 293 198 0 28 -24 17 -150 -71z","left":[-1,-1,156,144,138,133,129,126,123,121,119,117,115,113,112,110,109,108,106,104,11,10,11,14,17,21,24,27,31,34,38,60,60,60,60,60,61,61,62,63,65,4,4,5,78,88,100,99,97,95,93,90,87,41,38,35,32,29,27,24,21,18,15,13,13,15,125,128,131,132,134,135,136,136,137,138,138,138,139,139,140,140,140,141,141,141,142,142,143,143,143,144,144,145,146,146,147,148,148,149,150,151,152,153,154,155,156,157,158,160,161,163,163,163,163,164,164,164,164,164,165,165,165,165,165,165,165,165,165,165,166,166,166,166,166,166,165,165,165,165,165,165,165,165,164,164,164,163,159,155,152,149,147,146,145,144,143,143,142,142,142,143,144,145,146,148,153,180,181,184,187,195]}};
   const STATES = ['quiet', 'alert', 'missed', 'failed'];
   const LABEL = {
     quiet: 'Digs, asleep: all quiet',
@@ -667,34 +654,43 @@
     missed: 'Digs, puzzled: a run was missed',
     failed: 'Digs, barking: something failed',
   };
-  const art = document.getElementById('digs');
+  const phone = window.matchMedia('(max-width: 760px)');
+  const SCALE = () => phone.matches ? 0.38 : 0.5;
+  const stage = document.getElementById('digs');
   const params = new URLSearchParams(location.search);
   let state = STATES.includes(params.get('state')) ? params.get('state') : 'failed';
   const listeners = [];
   window.Digs = {
     get state() { return state; },
-    get src() { return 'digs-' + state + '.png'; },
+    get art() { return ART[state]; },
+    get scale() { return SCALE(); },
     onChange(fn) { listeners.push(fn); },
   };
+  function paint() {
+    const a = ART[state], s = SCALE();
+    const [x, y, w, h] = a.vb;
+    stage.innerHTML = '<svg viewBox="' + x + ' ' + y + ' ' + w + ' ' + h + '" width="' + Math.round(w * s) + '" height="' + Math.round(h * s) + '" aria-hidden="true"><g transform="' + a.tr + '"><path fill="currentColor" d="' + a.d + '"/></g></svg>';
+    stage.setAttribute('aria-label', LABEL[state]);
+    stage.dataset.state = state;
+  }
   function set(s) {
     state = s;
-    art.src = 'digs-' + s + '.png';
-    art.alt = LABEL[s];
-    art.dataset.state = s;
     document.querySelectorAll('.preview button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.set === s)));
+    paint();
     listeners.forEach(fn => fn());
   }
   document.querySelectorAll('.preview button').forEach(b => b.addEventListener('click', () => set(b.dataset.set)));
+  phone.addEventListener('change', () => { paint(); listeners.forEach(fn => fn()); });
   set(state);
 })();
 </script>
 
 <script type="module">
-/* ---------- The verdict hugs Digs's outline: each line is laid out by Pretext at the width his silhouette leaves. ---------- */
-const hero = document.querySelector('.hero');
-const host = document.querySelector('.hero-in');
+/* ---------- The verdict hugs Digs's outline: Pretext lays out each line at the width his drawing leaves. ---------- */
+const splash = document.querySelector('.splash');
+const host = document.querySelector('.splash-in');
 const para = document.getElementById('verdict');
-const art = document.getElementById('digs');
+const stage = document.getElementById('digs');
 const phone = window.matchMedia('(max-width: 760px)');
 if (phone.matches) document.querySelector('.drawer').removeAttribute('open');
 
@@ -702,29 +698,7 @@ const ITEMS = [
   { text: 'Agent sync failed and has not run since.', font: '600 22px Rubik', weight: 600 },
   { text: ' The other 59 jobs are fine: 16 daemons up, 34 scheduled jobs on time, and $2.31 of agent spend this month.', font: '400 22px Rubik', weight: 400 },
 ];
-const LH = 31, GAP = 28, MIN = 340, ALPHA = 40;
-
-// Leftmost inked pixel of every row in the drawing, read once per state from an offscreen canvas.
-const outlines = new Map();
-async function outline(src) {
-  if (outlines.has(src)) return outlines.get(src);
-  let result = null;
-  try {
-    const img = new Image(); img.src = src; await img.decode();
-    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
-    const ctx = c.getContext('2d', { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
-    const data = ctx.getImageData(0, 0, c.width, c.height).data;
-    const left = new Int32Array(c.height).fill(-1);
-    for (let y = 0; y < c.height; y++) {
-      const row = y * c.width;
-      for (let x = 0; x < c.width; x++) if (data[(row + x) * 4 + 3] > ALPHA) { left[y] = x; break; }
-    }
-    result = { w: c.width, h: c.height, left };
-  } catch (e) { result = null; } // tainted canvas or decode failure: rectangular exclusion below
-  outlines.set(src, result);
-  return result;
-}
-
+const LH = 32, GAP = 36, MIN = 360;
 function plain() { return '<strong>' + ITEMS[0].text + '</strong>' + ITEMS[1].text; }
 
 try {
@@ -732,29 +706,22 @@ try {
   await Promise.all(ITEMS.map(it => document.fonts.load(it.font, it.text)));
   const prepared = rich.prepareRichInline(ITEMS.map(({ text, font }) => ({ text, font })));
 
-  async function flow() {
-    if (phone.matches) { hero.classList.remove('flowing'); para.innerHTML = plain(); return; }
-    const src = window.Digs.src;
-    const sil = await outline(src);
-    if (src !== window.Digs.src) return; // state changed while reading; a newer flow is coming
-    hero.classList.add('flowing');
-
+  function flow() {
+    if (phone.matches) { splash.classList.remove('flowing'); para.innerHTML = plain(); return; }
+    splash.classList.add('flowing');
+    const art = window.Digs.art, s = window.Digs.scale;
     const W = host.clientWidth;
-    const hostBox = host.getBoundingClientRect(), box = art.getBoundingClientRect();
+    const hostBox = host.getBoundingClientRect(), box = stage.getBoundingClientRect();
     const imgX = box.left - hostBox.left, imgY = box.top - hostBox.top;
-    const scale = sil ? box.width / sil.w : 1;
 
     const frag = document.createDocumentFragment();
     let y = para.offsetTop, start, guard = 0;
     while (guard++ < 40) {
+      // drawing rows covered by this text line; `left` holds the leftmost inked column every 2 source rows
       let edge = Infinity;
-      if (sil) {
-        const r0 = Math.max(0, Math.floor((y - imgY) / scale));
-        const r1 = Math.min(sil.h - 1, Math.floor((y + LH - 1 - imgY) / scale));
-        for (let r = r0; r <= r1; r++) if (sil.left[r] >= 0) edge = Math.min(edge, imgX + sil.left[r] * scale);
-      } else if (y + LH > imgY && y < imgY + box.height) {
-        edge = imgX;
-      }
+      const r0 = Math.max(0, Math.floor((y - imgY) / s / 2));
+      const r1 = Math.min(art.left.length - 1, Math.floor((y + LH - 1 - imgY) / s / 2));
+      for (let r = r0; r <= r1; r++) if (art.left[r] >= 0) edge = Math.min(edge, imgX + art.left[r] * s);
       const avail = edge === Infinity ? W : Math.max(MIN, Math.min(W, edge - GAP));
       const range = rich.layoutNextRichInlineLineRange(prepared, avail, start);
       if (!range) break;
@@ -775,7 +742,6 @@ try {
   const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(flow); };
   new ResizeObserver(schedule).observe(host);
   window.Digs.onChange(schedule);
-  phone.addEventListener('change', schedule);
   flow();
 } catch (e) {
   // Pretext unavailable: the paragraph stays a normal paragraph beside Digs.
