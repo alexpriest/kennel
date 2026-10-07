@@ -4,7 +4,9 @@ One service manager for launchd, PM2, Homebrew services, and cron, so every back
 
 ## Status
 
-Shipped — built and linked from a clone; not published to a package registry.
+Shipped — built and linked from a clone; not published to a package registry. Runs always-on on the Mac Mini as `com.alexpriest.kennel` (`kennel ui --no-open`, bound to 127.0.0.1:5544).
+
+**Redesign approved 2026-10-07.** Start with `docs/plans/2026-10-07-redesign-build-plan.md`; the approved prototype and design history are in `docs/design/2026-10-redesign/`. Tracked in Linear project Kennel (umbrella ANT-992).
 
 ## License
 
@@ -69,6 +71,7 @@ kennel scheduled --json             # JSON output
 
 kennel ui                           # open web dashboard (localhost:5544)
 kennel ui --port 8080               # custom port
+kennel ui --no-open                 # serve without opening a browser (for a LaunchAgent); always binds 127.0.0.1
 
 kennel server                       # start MCP server (stdio)
 ```
