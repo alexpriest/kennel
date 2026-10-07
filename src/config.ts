@@ -6,6 +6,23 @@ export interface KennelConfig {
   aliases: Record<string, string>;
   notes: Record<string, string>;
   terminal?: string;
+  /** Domain name -> label glob patterns, matched in order. */
+  domains?: Record<string, string[]>;
+  defaultDomain?: string;
+  /** Per-label kind when the plist alone cannot tell (a run-once plist that never exits). */
+  kinds?: Record<string, 'daemon' | 'scheduled' | 'agent'>;
+  /** Label globs for the user's own jobs; anything else is shown as hidden. Empty: all own. */
+  ownLabels?: string[];
+  /** A TOML file whose [jobs] table maps labels to one-line purposes. */
+  inventoryNotes?: string;
+  /** Where run_task.py writes agent task state, and where their task docs live. */
+  agentTasks?: { stateDir?: string; vaultRoot?: string; tasksDir?: string; vaultName?: string };
+  /** How late a scheduled run can be (sleeping Mac) before it counts as missed. */
+  missedGraceMinutes?: number;
+}
+
+export function expandHome(path: string): string {
+  return path.startsWith('~/') ? join(homedir(), path.slice(2)) : path;
 }
 
 const CONFIG_DIR = join(homedir(), '.config', 'kennel');

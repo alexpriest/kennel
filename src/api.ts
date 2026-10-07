@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
 import { listScheduledTasks } from './scheduled.js';
+import { listJobs } from './collect.js';
 import { getDashboardHtml } from './dashboard.js';
 import { loadConfig, saveConfig, CLAUDE_DIR, ensureClaudeDir } from './config.js';
 import type { BackendType, ServiceStatus } from './types.js';
@@ -201,6 +202,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   if (pathname === '/api/doctor' && req.method === 'GET') {
     const issues = await runDoctor(registry);
     json(res, issues);
+    return;
+  }
+
+  if (pathname === '/api/jobs' && req.method === 'GET') {
+    json(res, await listJobs());
     return;
   }
 

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
 import { listScheduledTasks } from './scheduled.js';
+import { listJobs } from './collect.js';
 
 const registry = new Registry();
 
@@ -107,6 +108,13 @@ server.tool(
       content: [{ type: 'text', text: JSON.stringify(tasks, null, 2) }],
     };
   }
+);
+
+server.tool(
+  'list_jobs',
+  'Every background job with its kind (daemon/scheduled/agent), honest state (up/down/flapping/unhealthy; last result, on-time/missed, active/paused), uptime, memory, last and next run',
+  {},
+  async () => ({ content: [{ type: 'text', text: JSON.stringify(await listJobs(), null, 2) }] })
 );
 
 async function main() {

@@ -183,7 +183,7 @@ async function defaultLaunchctl(): Promise<Map<string, LaunchctlEntry>> {
   }
 }
 
-function taskNameFromArgs(args: string[] | undefined): string | null {
+export function taskNameFromArgs(args: string[] | undefined): string | null {
   if (!args) return null;
   const runner = args.findIndex(a => basename(a) === 'run_task.py');
   return runner >= 0 && args[runner + 1] ? args[runner + 1] : null;

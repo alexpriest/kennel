@@ -4,6 +4,7 @@ import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
 import { formatServiceTable, formatServiceInfo, formatDoctorResults, formatActionResult, formatScheduledTable } from './formatter.js';
 import { listScheduledTasks } from './scheduled.js';
+import { listJobs } from './collect.js';
 import chalk from 'chalk';
 import type { BackendType, ServiceStatus } from './types.js';
 
@@ -171,6 +172,14 @@ program
     } else {
       console.log(formatScheduledTable(tasks));
     }
+  });
+
+program
+  .command('jobs')
+  .description('Every job with its kind, honest state, last run and next run (JSON)')
+  .option('--json', 'output as JSON (the only format for now)')
+  .action(async () => {
+    console.log(JSON.stringify(await listJobs(), null, 2));
   });
 
 program

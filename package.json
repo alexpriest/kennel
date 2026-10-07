@@ -1,11 +1,12 @@
 {
   "name": "kennel",
   "version": "0.2.0",
-  "description": "Where your daemons live — unified macOS service manager for launchd, PM2, Homebrew services, and cron",
+  "description": "Where your daemons live \u2014 unified macOS service manager for launchd, PM2, Homebrew services, and cron",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "kennel": "dist/cli.js"
+    "kennel": "dist/cli.js",
+    "kennel-run": "dist/kennel-run.js"
   },
   "files": [
     "dist",

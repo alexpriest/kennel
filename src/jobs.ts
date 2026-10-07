@@ -52,7 +52,8 @@ export function isAgentCommand(args: string[] | undefined): boolean {
   return runner >= 0 && args.slice(runner + 1).includes('--agent');
 }
 
-export function jobKind(plist: JobPlist): JobKind {
+export function jobKind(plist: JobPlist, override?: JobKind): JobKind {
+  if (override) return override;
   if (detectTrigger(plist) === 'keepalive') return 'daemon';
   return isAgentCommand(plist.ProgramArguments) ? 'agent' : 'scheduled';
 }

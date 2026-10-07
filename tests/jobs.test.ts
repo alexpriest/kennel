@@ -52,6 +52,10 @@ describe('jobKind', () => {
     expect(jobKind({ StartInterval: 300, ProgramArguments: ['/bin/sh', 'x.sh'] })).toBe('scheduled');
     expect(jobKind({ WatchPaths: ['/x'] })).toBe('scheduled');
   });
+
+  it('a configured override wins (run-once plists that are really long-running daemons)', () => {
+    expect(jobKind({ KeepAlive: { SuccessfulExit: false }, RunAtLoad: true }, 'daemon')).toBe('daemon');
+  });
 });
 
 describe('prevRun', () => {
