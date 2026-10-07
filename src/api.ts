@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
+import { hostname } from 'node:os';
 import { access, readFile, stat } from 'node:fs/promises';
 import { join, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -64,6 +65,16 @@ function openStream(req: IncomingMessage, res: ServerResponse): (event: string, 
   const heartbeat = setInterval(() => res.write(': keepalive\n\n'), 25_000);
   req.on('close', () => clearInterval(heartbeat));
   return (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
+let cachedName: string | null = null;
+/** The Mac's friendly name ("Mac Mini"), falling back to the hostname. */
+async function computerName(): Promise<string> {
+  if (cachedName) return cachedName;
+  cachedName = await new Promise<string>(resolve => {
+    execFile('/usr/sbin/scutil', ['--get', 'ComputerName'], (err, stdout) => resolve(err ? hostname().replace(/\.(local|localdomain)$/, '') : stdout.trim()));
+  });
+  return cachedName;
 }
 
 async function findJob(id: string): Promise<Job | undefined> {
@@ -225,6 +236,11 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   if (pathname === '/api/jobs' && req.method === 'GET') {
     json(res, await listJobs());
+    return;
+  }
+
+  if (pathname === '/api/meta' && req.method === 'GET') {
+    json(res, { host: await computerName() });
     return;
   }
 

@@ -104,16 +104,15 @@ kennel v0.2.0
 
 ## Web Dashboard
 
-`kennel ui` starts a Svelte-powered dashboard with:
-- Stacked bar chart + stats overview
-- Sortable service table with click-to-expand details
-- Inline log viewer, notes editor
-- Start/stop/restart controls
-- Health check panel
-- Scheduled tasks section (failed runs in red, running runs pulsing, cost in USD)
-- Claude integration (investigate services with AI)
-- Dark/light theme, keyboard navigation
-- Auto-refresh every 60 seconds
+`kennel ui` serves the redesigned app (approved 2026-10-07, built in phase 2 / ANT-995) from `ui/dist`, live over `/api/events`:
+
+- **Today**: anything that needs a look (with Ask Claude to fix, Details, Mute for a day), today's runs on a timeline with one lane per domain and quiet hours folded, Coming up, Ran today.
+- **Daemons** (tiles with uptime, memory, process count), **Scheduled** (grouped by cadence, problems first), **Agents** (cards with next and last run, Run now, task doc), **Mac and third-party** (never alerted on).
+- A slide-over detail panel per job: honest actions (Start, Stop, Restart, Run now, Pause/Resume schedule, confirmed by launchd), facts, recent runs, and the merged log followed live.
+- Search (⌘K), domain filters, Digs in the sidebar footer, and shortcuts: `1`–`5` views, `j`/`k`/`↵` lists, `d` theme, `f` text size, `t` typeface (Mona Sans default, SF Pro, Atkinson; fonts are bundled, no Google Fonts), `?` help, `esc` close.
+- Ask Claude to fix opens a Claude Code session (in the terminal set in config) with the job's purpose, problem, plist, log paths and last 40 log lines.
+
+UI logic that can be tested lives in `ui/src/lib/model.ts` and is covered by `tests/ui-model.test.ts`.
 
 ## Menu Bar App (Tauri)
 

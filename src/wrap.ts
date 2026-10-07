@@ -5,6 +5,8 @@ import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { readLaunchctlPrint } from './probe.js';
+import { readRuns, writeRecord, RUNS_DIR, type KennelRunRecord } from './runs.js';
+import { stat } from 'node:fs/promises';
 
 // `kennel wrap`: route a LaunchAgent through kennel-run so every run is recorded.
 // Reversible with `kennel unwrap`; the original plist is backed up before the first wrap.
@@ -62,6 +64,34 @@ async function readArgs(path: string): Promise<string[]> {
   return plist.ProgramArguments ?? (plist.Program ? [plist.Program] : []);
 }
 
+/** launchd forgets a job's last exit on reload, so keep it as the first history entry. */
+export function seedRecord(label: string, lastExit: number | null, at: Date): KennelRunRecord | null {
+  if (lastExit === null) return null;
+  return {
+    label,
+    run_id: `seed-${label}`,
+    kind: 'scheduled',
+    started_at: at.toISOString(),
+    finished_at: at.toISOString(),
+    status: lastExit === 0 ? 'ok' : 'failed',
+    exit_code: lastExit,
+    duration_s: null,
+    log_tail: null,
+    seeded: true,
+  };
+}
+
+async function logMtime(plistPath: string): Promise<Date | null> {
+  const { stdout } = await execFileAsync('plutil', ['-convert', 'json', '-o', '-', plistPath]);
+  const plist = JSON.parse(stdout);
+  for (const path of [plist.StandardErrorPath, plist.StandardOutPath]) {
+    if (!path) continue;
+    const info = await stat(path).catch(() => null);
+    if (info) return info.mtime;
+  }
+  return null;
+}
+
 export type WrapOutcome = 'wrapped' | 'unwrapped' | 'unchanged' | 'running' | 'failed';
 
 /** Rewrites ProgramArguments and reloads the job if launchd had it loaded. Never interrupts a run. */
@@ -86,6 +116,12 @@ export async function applyWrap(
     await mkdir(BACKUP_DIR, { recursive: true });
     const backup = join(BACKUP_DIR, `${label}.plist`);
     if (mode === 'wrap' && !(await access(backup).then(() => true, () => false))) await copyFile(plistPath, backup);
+
+    if (mode === 'wrap' && before && !(await readRuns()).has(label)) {
+      const at = await logMtime(plistPath);
+      const seed = at ? seedRecord(label, before.lastExit, at) : null;
+      if (seed) await writeRecord(RUNS_DIR, { ...seed, kind: opts.agent ? 'agent' : 'scheduled' });
+    }
 
     await execFileAsync('plutil', ['-replace', 'ProgramArguments', '-json', JSON.stringify(next), plistPath]);
     await execFileAsync('plutil', ['-lint', plistPath]);

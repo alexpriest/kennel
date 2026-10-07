@@ -23,6 +23,8 @@ export interface KennelRunRecord {
   exit_code: number | null;
   duration_s: number | null;
   log_tail: string | null;
+  /** Carried over from launchd when the job was first wrapped; times come from the log file. */
+  seeded?: boolean;
 }
 
 export class TailBuffer {
@@ -45,7 +47,7 @@ export class TailBuffer {
   }
 }
 
-async function writeRecord(stateDir: string, record: KennelRunRecord): Promise<void> {
+export async function writeRecord(stateDir: string, record: KennelRunRecord): Promise<void> {
   await mkdir(stateDir, { recursive: true });
   const latest = join(stateDir, `${record.label}.json`);
   const tmp = `${latest}.${process.pid}.tmp`;

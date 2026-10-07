@@ -40,6 +40,8 @@ export interface Job {
   kind: JobKind;
   trigger: Trigger;
   schedule: string | null;
+  /** StartInterval in seconds, for interval jobs. */
+  intervalS: number | null;
   pid: number | null;
   configPath: string | null;
   logPaths: { stdout: string | null; stderr: string | null };
@@ -202,6 +204,7 @@ async function launchdJobs(config: KennelConfig, opts: CollectOptions, ps: Map<n
       kind,
       trigger,
       schedule: kind === 'daemon' ? null : scheduleText(plist, trigger),
+      intervalS: plist.StartInterval ?? null,
       pid,
       configPath: path,
       logPaths: { stdout: plist.StandardOutPath ?? null, stderr: plist.StandardErrorPath ?? null },
@@ -229,7 +232,14 @@ async function launchdJobs(config: KennelConfig, opts: CollectOptions, ps: Map<n
     let docUrl: string | null = null;
     const taskName = taskNameFromArgs(plist.ProgramArguments);
     const wrapped = kennelRuns.get(label);
-    if (wrapped) {
+    let lastExit = entry?.exitCode ?? null;
+    if (wrapped?.latest.seeded) {
+      // Carried over from launchd at wrap time: trust the result, not the time.
+      lastRun = undefined;
+      lastExit = wrapped.latest.exit_code;
+      recent = wrapped.recent;
+      source = 'kennel-run';
+    } else if (wrapped) {
       lastRun = fromKennelRun(wrapped);
       recent = wrapped.recent;
       source = 'kennel-run';
@@ -252,7 +262,7 @@ async function launchdJobs(config: KennelConfig, opts: CollectOptions, ps: Map<n
       calendar: plist.StartCalendarInterval,
       interval: plist.StartInterval,
       lastRun,
-      lastExit: entry?.exitCode ?? null,
+      lastExit,
       installedAt: read.mtime,
       now,
       graceS,
@@ -295,6 +305,7 @@ function serviceJob(service: Service, config: KennelConfig, ps: Map<number, PsRo
     kind: 'daemon',
     trigger: 'keepalive',
     schedule: null,
+    intervalS: null,
     pid: service.pid ?? null,
     configPath: service.configPath ?? null,
     logPaths: { stdout: service.logPaths?.stdout ?? null, stderr: service.logPaths?.stderr ?? null },

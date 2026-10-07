@@ -50,3 +50,15 @@ describe('stableNode', () => {
     expect(await stableNode('/opt/homebrew/Cellar/node/25.6.1/bin/node', '/usr/bin', exists)).toBe('/opt/homebrew/Cellar/node/25.6.1/bin/node');
   });
 });
+
+describe('seedRecord', () => {
+  it('carries launchd\'s last exit into run history, marked as seeded', async () => {
+    const { seedRecord } = await import('../src/wrap.js');
+    const at = new Date('2026-10-07T10:10:09Z');
+    expect(seedRecord('com.a.x', 1, at)).toMatchObject({
+      label: 'com.a.x', status: 'failed', exit_code: 1, started_at: at.toISOString(), finished_at: at.toISOString(), seeded: true, duration_s: null,
+    });
+    expect(seedRecord('com.a.x', 0, at)?.status).toBe('ok');
+    expect(seedRecord('com.a.x', null, at)).toBeNull();
+  });
+});
