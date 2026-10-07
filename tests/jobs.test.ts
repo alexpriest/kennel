@@ -105,6 +105,15 @@ describe('deriveDaemonState', () => {
     expect(deriveDaemonState({ loaded: true, pid: 10, lastExit: 1, uptimeS: 120, restartsInWindow: 1 })).toBe('unhealthy');
   });
 
+  it('a deliberate stop (SIGTERM, SIGINT, SIGHUP) is not a crash; a segfault or abort is', () => {
+    const recent = { loaded: true, pid: 10, uptimeS: 60, restartsInWindow: 1 };
+    expect(deriveDaemonState({ ...recent, lastExit: -15 })).toBe('up');
+    expect(deriveDaemonState({ ...recent, lastExit: -2 })).toBe('up');
+    expect(deriveDaemonState({ ...recent, lastExit: -1 })).toBe('up');
+    expect(deriveDaemonState({ ...recent, lastExit: -11 })).toBe('unhealthy');
+    expect(deriveDaemonState({ ...recent, lastExit: -6 })).toBe('unhealthy');
+  });
+
   it('a crash long ago with a stable process since is up', () => {
     expect(deriveDaemonState({ loaded: true, pid: 10, lastExit: 1, uptimeS: 10 * MIN + 1, restartsInWindow: 0 })).toBe('up');
   });

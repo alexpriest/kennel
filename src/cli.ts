@@ -5,6 +5,7 @@ import { runDoctor } from './doctor.js';
 import { formatServiceTable, formatServiceInfo, formatDoctorResults, formatActionResult, formatScheduledTable } from './formatter.js';
 import { listScheduledTasks } from './scheduled.js';
 import { listJobs } from './collect.js';
+import { followLogs } from './logs.js';
 import chalk from 'chalk';
 import type { BackendType, ServiceStatus } from './types.js';
 
@@ -71,48 +72,19 @@ program
 
 program
   .command('logs <service>')
-  .description('Show recent logs for a service')
+  .description('Show recent logs for a service (stdout and stderr merged)')
   .option('-n, --lines <n>', 'number of lines', '50')
-  .option('-f, --follow', 'follow log output (poll every 2s)')
+  .option('-f, --follow', 'follow log output live')
   .action(async (name: string, opts) => {
-    const logs = await registry.getLogs(name, parseInt(opts.lines));
-    console.log(logs);
-
-    if (opts.follow) {
-      let lastContent = logs;
-      const poll = async () => {
-        const fresh = await registry.getLogs(name, parseInt(opts.lines));
-        if (fresh !== lastContent) {
-          // Find new lines by comparing from the end
-          const freshLines = fresh.split('\n');
-          const lastLines = lastContent.split('\n');
-          // Find where old content ends in new content
-          let overlap = 0;
-          for (let i = Math.min(lastLines.length, freshLines.length); i >= 0; i--) {
-            const tail = lastLines.slice(-i).join('\n');
-            if (fresh.startsWith(tail) || freshLines.slice(0, i).join('\n') === tail) {
-              overlap = i;
-              break;
-            }
-          }
-          const newLines = freshLines.slice(overlap);
-          if (newLines.length > 0 && newLines.some(l => l.trim())) {
-            process.stdout.write(newLines.join('\n') + '\n');
-          }
-          lastContent = fresh;
-        }
-      };
-
-      const interval = setInterval(poll, 2000);
-
-      process.on('SIGINT', () => {
-        clearInterval(interval);
-        process.exit(0);
-      });
-
-      // Keep process alive
-      await new Promise(() => {});
-    }
+    const service = await registry.getService(name);
+    console.log(await registry.getLogs(name, parseInt(opts.lines)));
+    if (!opts.follow || !service?.logPaths) return;
+    const paths = { stdout: service.logPaths.stdout ?? null, stderr: service.logPaths.stderr ?? null };
+    const stop = await followLogs(paths, lines => {
+      for (const line of lines) console.log(line.stream === 'err' ? chalk.red(line.text) : line.text);
+    });
+    process.on('SIGINT', () => { stop(); process.exit(0); });
+    await new Promise(() => {});
   });
 
 program

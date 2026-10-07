@@ -8,36 +8,36 @@ const execFileAsync = promisify(execFile);
 export interface PsRow {
   pid: number;
   ppid: number;
-  etimeS: number | null;
   rssKb: number;
+  startedAt: Date | null;
 }
 
-export function parseEtime(text: string): number | null {
-  const match = /^(?:(\d+)-)?(?:(\d+):)?(\d+):(\d+)$/.exec(text.trim());
-  if (!match) return null;
-  const [, days, hours, minutes, seconds] = match;
-  return Number(days ?? 0) * 86400 + Number(hours ?? 0) * 3600 + Number(minutes) * 60 + Number(seconds);
-}
-
+/** Rows of `LC_ALL=C ps -axo pid=,ppid=,rss=,lstart=`; lstart is a stable start time. */
 export function parsePsTable(output: string): Map<number, PsRow> {
   const rows = new Map<number, PsRow>();
   for (const line of output.split('\n')) {
-    const parts = line.trim().split(/\s+/);
-    if (parts.length < 4) continue;
-    const [pid, ppid, etime, rss] = parts;
-    rows.set(Number(pid), { pid: Number(pid), ppid: Number(ppid), etimeS: parseEtime(etime), rssKb: Number(rss) });
+    const match = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.+?)\s*$/.exec(line);
+    if (!match) continue;
+    const started = Date.parse(match[4].replace(/\s+/g, ' '));
+    rows.set(Number(match[1]), {
+      pid: Number(match[1]),
+      ppid: Number(match[2]),
+      rssKb: Number(match[3]),
+      startedAt: Number.isNaN(started) ? null : new Date(started),
+    });
   }
   return rows;
 }
 
 export interface TreeStats {
+  startedAt: Date | null;
   uptimeS: number | null;
   rssKb: number;
   processes: number;
 }
 
 /** A launcher wrapper's own pid under-reports memory, so sum every descendant. */
-export function treeStats(table: Map<number, PsRow>, pid: number): TreeStats | null {
+export function treeStats(table: Map<number, PsRow>, pid: number, now: Date = new Date()): TreeStats | null {
   const root = table.get(pid);
   if (!root) return null;
   const children = new Map<number, number[]>();
@@ -55,7 +55,8 @@ export function treeStats(table: Map<number, PsRow>, pid: number): TreeStats | n
     processes += 1;
     stack.push(...(children.get(current) ?? []));
   }
-  return { uptimeS: root.etimeS, rssKb, processes };
+  const uptimeS = root.startedAt ? Math.round((now.getTime() - root.startedAt.getTime()) / 1000) : null;
+  return { startedAt: root.startedAt, uptimeS, rssKb, processes };
 }
 
 export interface LaunchctlPrint {
@@ -104,7 +105,7 @@ export class FlapTracker {
 
 export async function readPsTable(): Promise<Map<number, PsRow>> {
   try {
-    const { stdout } = await execFileAsync('ps', ['-axo', 'pid=,ppid=,etime=,rss=']);
+    const { stdout } = await execFileAsync('ps', ['-axo', 'pid=,ppid=,rss=,lstart='], { env: { ...process.env, LC_ALL: 'C' } });
     return parsePsTable(stdout);
   } catch {
     return new Map();

@@ -6,8 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { Registry } from './registry.js';
 import { runDoctor } from './doctor.js';
 import { listScheduledTasks } from './scheduled.js';
-import { listJobs } from './collect.js';
-import { getDashboardHtml } from './dashboard.js';
+import { listJobs, type Job } from './collect.js';
+import { JobEvents } from './events.js';
+import { followLogs, readMergedTail } from './logs.js';
 import { loadConfig, saveConfig, CLAUDE_DIR, ensureClaudeDir } from './config.js';
 import type { BackendType, ServiceStatus } from './types.js';
 
@@ -51,6 +52,23 @@ async function hasUiDist(): Promise<boolean> {
 }
 
 const registry = new Registry();
+const jobEvents = new JobEvents<Job[]>(() => listJobs(), { intervalMs: 5000 });
+
+function openStream(req: IncomingMessage, res: ServerResponse): (event: string, data: unknown) => void {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+    'Access-Control-Allow-Origin': 'http://localhost:5544',
+  });
+  const heartbeat = setInterval(() => res.write(': keepalive\n\n'), 25_000);
+  req.on('close', () => clearInterval(heartbeat));
+  return (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
+async function findJob(id: string): Promise<Job | undefined> {
+  return (await listJobs()).find(j => j.id === id);
+}
 
 const KNOWN_TERMINALS = [
   { name: 'cmux', check: '/Applications/cmux.app' },
@@ -155,13 +173,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   }
 
   if (pathname === '/' && req.method === 'GET') {
-    // Serve Svelte UI if built, otherwise fall back to inline HTML
     if (await hasUiDist()) {
       await serveStaticFile(res, join(UI_DIST, 'index.html'));
       return;
     }
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(getDashboardHtml());
+    res.writeHead(503, { 'Content-Type': 'text/plain' });
+    res.end('The Kennel UI is not built. Run: npm --prefix ui install && npm --prefix ui run build\n');
     return;
   }
 
@@ -187,6 +204,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   if (pathname === '/api/action' && req.method === 'POST') {
     const body = JSON.parse(await readBody(req));
     const result = await registry.performAction(body.name, body.action);
+    void jobEvents.poke();
     json(res, result);
     return;
   }
@@ -207,6 +225,28 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   if (pathname === '/api/jobs' && req.method === 'GET') {
     json(res, await listJobs());
+    return;
+  }
+
+  if (pathname === '/api/events' && req.method === 'GET') {
+    const send = openStream(req, res);
+    const unsubscribe = jobEvents.subscribe(jobs => send('jobs', jobs));
+    req.on('close', unsubscribe);
+    return;
+  }
+
+  const jobLogs = /^\/api\/jobs\/([^/]+)\/logs(\/stream)?$/.exec(pathname);
+  if (jobLogs && req.method === 'GET') {
+    const job = await findJob(decodeURIComponent(jobLogs[1]));
+    if (!job) return json(res, { error: 'Not found' }, 404);
+    if (!jobLogs[2]) {
+      const lines = Math.min(parseInt(params.get('lines') ?? '200') || 200, 5000);
+      return json(res, { lines: await readMergedTail(job.logPaths, lines) });
+    }
+    const send = openStream(req, res);
+    send('lines', await readMergedTail(job.logPaths, 200));
+    const stop = await followLogs(job.logPaths, lines => send('lines', lines));
+    req.on('close', stop);
     return;
   }
 

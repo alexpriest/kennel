@@ -8,6 +8,8 @@ Shipped — built and linked from a clone; not published to a package registry. 
 
 **Redesign approved 2026-10-07.** Start with `docs/plans/2026-10-07-redesign-build-plan.md`; the approved prototype and design history are in `docs/design/2026-10-redesign/`. Tracked in Linear project Kennel (umbrella ANT-992).
 
+**Phase 1 (true job data) shipped 2026-10-07 (ANT-993):** `kennel jobs`, `/api/jobs`, `/api/events` (SSE), `/api/jobs/<id>/logs[/stream]`, the `list_jobs` MCP tool, and the `kennel-run` wrapper. The old Svelte UI still reads `/api/services` and `/api/scheduled` until phase 2 ports the approved design onto `/api/jobs`.
+
 ## License
 
 Not licensed for reuse.
@@ -55,8 +57,10 @@ kennel list --json                  # JSON output for scripting
 kennel info <service>               # detailed service info (box-drawn card)
 kennel info imessage-attio          # partial name match works
 
-kennel logs <service>               # recent logs
-kennel logs <service> --follow      # live tail (polls every 2s)
+kennel jobs                         # every job as JSON: kind, honest state, last/next run, uptime, memory
+
+kennel logs <service>               # recent logs, stdout + stderr merged ([err] marks stderr)
+kennel logs <service> --follow      # live tail of both streams
 kennel logs <service> --lines 100   # specify line count
 
 kennel start <service>              # start a service (animated spinner)
@@ -146,6 +150,23 @@ Add to `~/.claude.json`:
 | `service_logs` | Get recent log output |
 | `doctor` | Run health checks |
 | `list_scheduled_tasks` | Scheduled agent tasks with schedule, next run, last status, cost, last 7 results |
+| `list_jobs` | Every job with kind, honest state, uptime, memory, last and next run |
+
+## Jobs and states
+
+`kennel jobs` / `/api/jobs` classify each launchd job from its plist: **daemon** (KeepAlive), **scheduled** (calendar, interval, `WatchPaths` = "When files change", `KeepAlive {SuccessfulExit: false}` = "Once, until it succeeds", `RunAtLoad` only = "At login", or on demand) and **agent** (runs `run_task.py` or `kennel-run --agent`). PM2 and Homebrew services are daemons.
+
+- Daemons: **up**, **down**, **flapping** (3+ starts in 10 minutes), **unhealthy** (running again within 10 minutes of a crash; SIGTERM/SIGINT/SIGHUP are deliberate stops, not crashes). Uptime comes from the process start time and memory sums the whole process tree, because launcher wrappers under-report.
+- Scheduled and agent jobs: schedule **active**/**paused** (unloaded or disabled), last result **ok**/**failed**/**running**/**never**/**unknown**, and timing **on-time**/**missed** (no run started after the last due slot plus a 30-minute grace for a sleeping Mac). Timing is **unknown** unless a run record exists, from `kennel-run` or `run_task.py`.
+- Actions pick verbs from the job's state (start = bootstrap or run now, restart = `kickstart -k`, stop = bootout), confirm the result with launchd, and say why when launchd disagrees. Kennel refuses to stop or restart itself.
+
+### kennel-run
+
+Wrap a LaunchAgent's command to give it run history: `ProgramArguments = [kennel-run, --, <command>, <args>…]` (add `--agent` for LLM tasks). It takes the label from launchd's `XPC_SERVICE_NAME`, passes output through to the job's own log files, passes the exit code back to launchd, and writes `~/.local/state/kennel/runs/<label>.json` plus `history.jsonl` (start, finish, exit code, duration, last 8 KB of merged output).
+
+### Config (`~/.config/kennel/config.json`)
+
+Personal specifics live here, not in code: `aliases` (display names), `notes` (purposes), `domains` (domain → label globs), `defaultDomain`, `kinds` (per-label kind when a plist can't say), `ownLabels` (globs for your own jobs; the rest are hidden), `inventoryNotes` (a TOML file whose `[jobs]` table maps labels to purposes), `agentTasks` (run_task.py state and doc locations), `missedGraceMinutes`.
 
 ## Scheduled tasks
 

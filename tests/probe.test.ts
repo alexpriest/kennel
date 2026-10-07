@@ -1,31 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { parseEtime, parsePsTable, treeStats, parseLaunchctlPrint, parseDisabled, FlapTracker } from '../src/probe.js';
-
-describe('parseEtime', () => {
-  it('handles mm:ss, hh:mm:ss and dd-hh:mm:ss', () => {
-    expect(parseEtime('00:05')).toBe(5);
-    expect(parseEtime('01:02:03')).toBe(3723);
-    expect(parseEtime('04-18:50:20')).toBe(4 * 86400 + 18 * 3600 + 50 * 60 + 20);
-    expect(parseEtime('garbage')).toBeNull();
-  });
-});
+import { parsePsTable, treeStats, parseLaunchctlPrint, parseDisabled, FlapTracker } from '../src/probe.js';
 
 describe('process tree', () => {
   const table = parsePsTable([
-    '    1     0 04-18:50:20  32336',
-    '  100     1    01:00:00   1000',
-    '  101   100    00:59:00   2000',
-    '  102   101    00:30:00   3000',
-    '  200     1       00:10    500',
+    '    1     0  32336 Fri Oct  2 14:26:01 2026    ',
+    '  100     1   1000 Wed Oct  7 08:00:00 2026',
+    '  101   100   2000 Wed Oct  7 08:01:00 2026',
+    '  102   101   3000 Wed Oct  7 08:30:00 2026',
+    '  200     1    500 Wed Oct  7 08:59:50 2026',
   ].join('\n'));
+  const now = new Date(2026, 9, 7, 9, 0, 0);
 
-  it('uptime is the root process age; memory sums the whole tree', () => {
-    expect(treeStats(table, 100)).toEqual({ uptimeS: 3600, rssKb: 6000, processes: 3 });
-    expect(treeStats(table, 200)).toEqual({ uptimeS: 10, rssKb: 500, processes: 1 });
+  it('start time and uptime come from the root process; memory sums the whole tree', () => {
+    expect(treeStats(table, 100, now)).toEqual({ startedAt: new Date(2026, 9, 7, 8, 0, 0), uptimeS: 3600, rssKb: 6000, processes: 3 });
+    expect(treeStats(table, 200, now)).toMatchObject({ uptimeS: 10, rssKb: 500, processes: 1 });
   });
 
   it('null for a pid that is gone', () => {
-    expect(treeStats(table, 999)).toBeNull();
+    expect(treeStats(table, 999, now)).toBeNull();
   });
 });
 

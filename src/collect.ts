@@ -44,7 +44,8 @@ export interface Job {
   logPaths: { stdout: string | null; stderr: string | null };
   daemon?: {
     state: DaemonState;
-    uptimeS: number | null;
+    /** Start of the current process; the UI derives a live uptime from it. */
+    startedAt: string | null;
     memoryMb: number | null;
     processes: number | null;
     restartsInWindow: number;
@@ -207,13 +208,13 @@ async function launchdJobs(config: KennelConfig, opts: CollectOptions, ps: Map<n
 
     if (kind === 'daemon') {
       const printed = entry ? await readLaunchctlPrint(domain, label) : null;
-      const tree = pid ? treeStats(ps, pid) : null;
+      const tree = pid ? treeStats(ps, pid, now) : null;
       const restartsInWindow = printed?.runs != null ? Math.max(0, flaps.observe(label, printed.runs, now.getTime())) : 0;
       const lastExit = printed?.lastExit ?? entry?.exitCode ?? null;
       job.daemon = {
         state: deriveDaemonState({ loaded: !!entry, pid, lastExit, uptimeS: tree?.uptimeS ?? null, restartsInWindow }),
-        uptimeS: tree?.uptimeS ?? null,
-        memoryMb: tree ? Math.round(tree.rssKb / 102.4) / 10 : null,
+        startedAt: tree?.startedAt?.toISOString() ?? null,
+        memoryMb: tree ? memoryMb(tree.rssKb) : null,
         processes: tree?.processes ?? null,
         restartsInWindow,
         lastExit,
@@ -260,6 +261,11 @@ async function launchdJobs(config: KennelConfig, opts: CollectOptions, ps: Map<n
   return jobs.filter((j): j is Job => j !== null);
 }
 
+/** Whole megabytes, so the pushed list does not churn on every kilobyte. */
+function memoryMb(rssKb: number): number {
+  return Math.max(1, Math.round(rssKb / 1024));
+}
+
 function scheduleText(plist: JobPlist, trigger: Trigger): string {
   switch (trigger) {
     case 'calendar':
@@ -290,8 +296,8 @@ function serviceJob(service: Service, config: KennelConfig, ps: Map<number, PsRo
     logPaths: { stdout: service.logPaths?.stdout ?? null, stderr: service.logPaths?.stderr ?? null },
     daemon: {
       state: up ? 'up' : 'down',
-      uptimeS: tree?.uptimeS ?? null,
-      memoryMb: tree ? Math.round(tree.rssKb / 102.4) / 10 : null,
+      startedAt: tree?.startedAt?.toISOString() ?? null,
+      memoryMb: tree ? memoryMb(tree.rssKb) : null,
       processes: tree?.processes ?? null,
       restartsInWindow: 0,
       lastExit: service.exitCode ?? null,

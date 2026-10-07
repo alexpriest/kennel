@@ -7,6 +7,7 @@ import type { Backend, Service, ServiceAction } from '../types.js';
 import { formatSchedule, type CalendarInterval } from '../schedule.js';
 import { confirmAction, isSelf, planLaunchdAction, type LaunchdSnapshot } from '../actions.js';
 import { readLaunchctlPrint, readPsTable, type PsRow } from '../probe.js';
+import { readMergedTail } from '../logs.js';
 
 const PAST: Record<ServiceAction, string> = { start: 'Started', stop: 'Stopped', restart: 'Restarted' };
 
@@ -160,14 +161,10 @@ export class LaunchdBackend implements Backend {
 
   async getLogs(id: string, lines = 50): Promise<string> {
     const service = await this.getInfo(id);
-    if (!service?.logPaths?.stdout) return 'No log path configured';
-
-    try {
-      const { stdout } = await execFileAsync('tail', ['-n', String(lines), service.logPaths.stdout]);
-      return stdout;
-    } catch {
-      return `Could not read log file: ${service.logPaths.stdout}`;
-    }
+    const paths = { stdout: service?.logPaths?.stdout ?? null, stderr: service?.logPaths?.stderr ?? null };
+    if (!paths.stdout && !paths.stderr) return 'No log path configured';
+    const merged = await readMergedTail(paths, lines);
+    return merged.map(l => (l.stream === 'err' ? `[err] ${l.text}` : l.text)).join('\n');
   }
 
   private plistPathFor(label: string): string {

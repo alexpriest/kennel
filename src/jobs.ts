@@ -25,6 +25,8 @@ export type Timing = 'on-time' | 'missed' | 'n/a' | 'unknown';
 
 const FLAP_RESTARTS = 3;
 const UNHEALTHY_WINDOW_S = 10 * 60;
+// launchd reports death by signal as a negative exit code. These come from someone asking it to stop.
+const DELIBERATE_SIGNALS = new Set([-1, -2, -15]);
 
 function isRunOnce(keepAlive: Record<string, unknown>): boolean {
   const keys = Object.keys(keepAlive);
@@ -70,7 +72,7 @@ export interface DaemonFacts {
 export function deriveDaemonState(f: DaemonFacts): DaemonState {
   if (f.restartsInWindow >= FLAP_RESTARTS) return 'flapping';
   if (!f.loaded || !f.pid) return 'down';
-  const crashed = f.lastExit !== null && f.lastExit !== 0;
+  const crashed = f.lastExit !== null && f.lastExit !== 0 && !DELIBERATE_SIGNALS.has(f.lastExit);
   if (crashed && f.uptimeS !== null && f.uptimeS <= UNHEALTHY_WINDOW_S) return 'unhealthy';
   return 'up';
 }
