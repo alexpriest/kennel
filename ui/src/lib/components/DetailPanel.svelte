@@ -38,6 +38,50 @@
     await store.act(j, action, doing);
   }
 
+  let editing = $state(false);
+  let draftName = $state('');
+  let draftPurpose = $state('');
+  let nameInput = $state<HTMLInputElement>();
+  let purposeInput = $state<HTMLTextAreaElement>();
+  let saving = $state(false);
+
+  $effect(() => { void ui.open; editing = false; });
+
+  function edit(focus: 'name' | 'purpose' = 'name') {
+    if (!job) return;
+    draftName = job.name;
+    draftPurpose = job.purpose ?? '';
+    editing = true;
+    queueMicrotask(() => {
+      const el = focus === 'name' ? nameInput : purposeInput;
+      el?.focus();
+      el?.select();
+    });
+  }
+
+  async function save() {
+    if (!job || saving) return;
+    const meta: { name?: string; purpose?: string } = {};
+    if (draftName.trim() !== job.name) meta.name = draftName.trim();
+    if (draftPurpose.trim() !== (job.purpose ?? '')) meta.purpose = draftPurpose.trim();
+    if (!Object.keys(meta).length) { editing = false; return; }
+    saving = true;
+    if (await store.saveMeta(job, meta)) editing = false;
+    saving = false;
+  }
+
+  function editKeys(e: KeyboardEvent) {
+    if (e.key === 'Escape') { e.preventDefault(); editing = false; }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void save(); }
+  }
+
+  function windowKeys(e: KeyboardEvent) {
+    const active = document.activeElement as HTMLElement | null;
+    if (!job || editing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    if (e.key === 'e') { e.preventDefault(); edit(); }
+  }
+
   function fix(j: Job) {
     digs.react('alert', 'On it', 1800);
     void store.askClaude(j);
@@ -51,6 +95,8 @@
   const sourceLabel: Record<string, string> = { 'kennel-run': 'kennel-run', run_task: 'run_task.py', launchd: 'launchd exit code only' };
 </script>
 
+<svelte:window onkeydown={windowKeys} />
+
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="scrim" class:open={!!job} onclick={close}></div>
 <aside class="panel" class:open={!!job} aria-label="Job details" aria-hidden={!job}>
@@ -59,13 +105,28 @@
     {@const busy = store.pending[job.id]}
     <div class="p-wrap">
       <div class="p-top">
-        <div>
-          <h2>{job.name}</h2>
+        <div class="p-title">
+          {#if editing}
+            <input class="p-edit-name" bind:this={nameInput} bind:value={draftName} onkeydown={editKeys} placeholder={job.id} aria-label="Name" />
+          {:else}
+            <h2><button class="p-editable" type="button" title="Rename (e)" onclick={() => edit('name')}>{job.name}</button></h2>
+          {/if}
           <div class="p-sub"><Glyph {job} /><span>{statusText(job)}</span>·<span>{job.own ? KIND_LABELS[job.kind] : 'Third-party'}</span>{#if job.own}·<Tag domain={job.domain} />{/if}</div>
         </div>
         <button class="p-close" type="button" aria-label="Close" onclick={close}><svg class="i"><use href="#i-x" /></svg></button>
       </div>
-      {#if job.purpose}<p class="p-purpose">{job.purpose}</p>{/if}
+      {#if editing}
+        <div class="p-edit">
+          <textarea class="p-edit-purpose" rows="3" bind:this={purposeInput} bind:value={draftPurpose} onkeydown={editKeys} placeholder="What this job does, in one line" aria-label="Description"></textarea>
+          <div class="p-edit-row">
+            <button class="btn primary" type="button" disabled={saving} onclick={save}>{saving ? 'Saving…' : 'Save'}</button>
+            <button class="btn quiet" type="button" onclick={() => (editing = false)}>Cancel</button>
+            <small>{job.backend === 'launchd' && job.own ? 'Description saves to the system inventory notes.' : 'Saved in Kennel.'} A blank name goes back to the default.</small>
+          </div>
+        </div>
+      {:else}
+        <button class="p-purpose p-editable" class:p-empty={!job.purpose} type="button" title="Edit description (e)" onclick={() => edit('purpose')}>{job.purpose || 'Add a description'}</button>
+      {/if}
       {#if problem}<p class="p-purpose" style="color: var(--attn)">{problem.text}</p>{/if}
 
       <div class="p-actions">

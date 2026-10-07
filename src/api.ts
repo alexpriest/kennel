@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { exec, execFile } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { hostname } from 'node:os';
-import { access, readFile, stat } from 'node:fs/promises';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import { join, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Registry } from './registry.js';
@@ -10,7 +10,9 @@ import { listScheduledTasks } from './scheduled.js';
 import { listJobs, type Job } from './collect.js';
 import { JobEvents } from './events.js';
 import { followLogs, readMergedTail } from './logs.js';
-import { loadConfig, saveConfig, CLAUDE_DIR, ensureClaudeDir } from './config.js';
+import { loadConfig, saveConfig, CLAUDE_DIR, ensureClaudeDir, expandHome } from './config.js';
+import { setInventoryPurpose } from './metadata.js';
+import { installedTerminals, pickTerminal, stageLaunch, terminalLaunch, launchError } from './claude-launch.js';
 import type { BackendType, ServiceStatus } from './types.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -79,68 +81,6 @@ async function computerName(): Promise<string> {
 
 async function findJob(id: string): Promise<Job | undefined> {
   return (await listJobs()).find(j => j.id === id);
-}
-
-const KNOWN_TERMINALS = [
-  { name: 'cmux', check: '/Applications/cmux.app' },
-  { name: 'Ghostty', check: '/Applications/Ghostty.app' },
-  { name: 'Terminal', check: '/System/Applications/Utilities/Terminal.app' },
-  { name: 'iTerm2', check: '/Applications/iTerm.app' },
-  { name: 'Kitty', check: '/Applications/kitty.app' },
-  { name: 'Alacritty', check: '/Applications/Alacritty.app' },
-  { name: 'Warp', check: '/Applications/Warp.app' },
-  { name: 'WezTerm', check: '/Applications/WezTerm.app' },
-];
-
-async function detectTerminals(): Promise<{ name: string }[]> {
-  const detected: { name: string }[] = [];
-  for (const t of KNOWN_TERMINALS) {
-    if (t.check) {
-      try { await access(t.check); detected.push({ name: t.name }); } catch {}
-    }
-  }
-  return detected;
-}
-
-function escapeForDoubleQuotes(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-}
-
-function buildTerminalCommand(terminal: string, prompt: string, claudeDir: string): string {
-  const safePrompt = prompt.replace(/'/g, "'\"'\"'");
-  // cd into the kennel claude dir so all sessions are grouped
-  const cdAndClaude = `cd ${claudeDir} && claude '"'"'${safePrompt}'"'"'`;
-
-  switch (terminal) {
-    case 'cmux':
-      return `cmux new-workspace --command '${cdAndClaude}'`;
-
-    case 'Ghostty':
-      return `open -na Ghostty --args -e bash -c '${cdAndClaude}'`;
-
-    case 'iTerm2': {
-      const dqPrompt = escapeForDoubleQuotes(prompt);
-      const dqDir = escapeForDoubleQuotes(claudeDir);
-      return `osascript -e 'tell application "iTerm2"' -e 'activate' -e 'create window with default profile' -e 'tell current session of current window to write text "cd ${dqDir} && claude \\"${dqPrompt}\\""' -e 'end tell'`;
-    }
-
-    case 'Kitty':
-      return `kitty --single-instance bash -c '${cdAndClaude}'`;
-
-    case 'Alacritty':
-      return `alacritty -e bash -c '${cdAndClaude}'`;
-
-    case 'WezTerm':
-      return `wezterm start -- bash -c '${cdAndClaude}'`;
-
-    case 'Warp':
-    case 'Terminal':
-    default: {
-      const dqPrompt = escapeForDoubleQuotes(prompt);
-      const dqDir = escapeForDoubleQuotes(claudeDir);
-      return `osascript -e 'tell application "Terminal" to activate' -e 'tell application "Terminal" to do script "cd ${dqDir} && claude \\"${dqPrompt}\\""'`;
-    }
-  }
 }
 
 function isLocalOrigin(req: IncomingMessage): boolean {
@@ -304,8 +244,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   }
 
   if (pathname === '/api/terminals' && req.method === 'GET') {
-    const terminals = await detectTerminals();
-    json(res, terminals);
+    json(res, (await installedTerminals()).map(name => ({ name })));
     return;
   }
 
@@ -319,25 +258,56 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   }
 
   if (pathname === '/api/claude' && req.method === 'POST') {
-    try {
-      const body = JSON.parse(await readBody(req));
-      const config = await loadConfig();
-      const terminal = config.terminal || 'Terminal';
-      await ensureClaudeDir();
-      const cmd = buildTerminalCommand(terminal, body.prompt, CLAUDE_DIR);
-
-      const result = await new Promise<{ success: boolean; message?: string; command?: string }>((resolve) => {
-        exec(cmd, (err) => {
-          resolve(err
-            ? { success: false, message: err.message, command: cmd }
-            : { success: true, command: cmd }
-          );
-        });
-      });
-      json(res, result);
-    } catch (err: any) {
-      json(res, { success: false, message: err.message });
+    const body = JSON.parse(await readBody(req)) as { prompt?: string };
+    const config = await loadConfig();
+    const terminal = pickTerminal(config.terminal, await installedTerminals());
+    if (!terminal || !body.prompt) {
+      json(res, { success: false, message: terminal ? 'Nothing to ask' : 'No supported terminal app is installed' });
+      return;
     }
+    try {
+      await ensureClaudeDir();
+      const script = await stageLaunch(CLAUDE_DIR, body.prompt);
+      const { file, args } = terminalLaunch(terminal, script, CLAUDE_DIR, process.env.SHELL || '/bin/zsh');
+      const failure = await new Promise<string | null>(done => {
+        execFile(file, args, { timeout: 120_000 }, (err, _out, stderr) => done(err ? (stderr || err.message) : null));
+      });
+      json(res, failure ? { success: false, message: launchError(terminal, failure) } : { success: true, terminal });
+    } catch (err: any) {
+      json(res, { success: false, message: launchError(terminal, String(err?.message ?? err)) });
+    }
+    return;
+  }
+
+  const metaMatch = pathname.match(/^\/api\/jobs\/([^/]+)\/meta$/);
+  if (metaMatch && req.method === 'POST') {
+    const id = decodeURIComponent(metaMatch[1]);
+    const job = await findJob(id);
+    if (!job) { json(res, { success: false, message: 'No such job' }, 404); return; }
+    const body = JSON.parse(await readBody(req)) as { name?: string | null; purpose?: string | null };
+    const config = await loadConfig();
+    if (body.name !== undefined) {
+      const name = (body.name ?? '').trim();
+      if (name) config.aliases[id] = name; else delete config.aliases[id];
+    }
+    if (body.purpose !== undefined) {
+      const purpose = (body.purpose ?? '').replace(/\s+/g, ' ').trim() || null;
+      // Own launchd jobs keep their purpose in the inventory notes, the one list
+      // the system inventory reads; everything else keeps it in Kennel's config.
+      if (config.inventoryNotes && job.backend === 'launchd' && job.own) {
+        const path = expandHome(config.inventoryNotes);
+        const text = await readFile(path, 'utf8').catch(() => '');
+        await writeFile(path, setInventoryPurpose(text, id, purpose));
+        delete config.notes[id];
+      } else if (purpose) {
+        config.notes[id] = purpose;
+      } else {
+        delete config.notes[id];
+      }
+    }
+    await saveConfig(config);
+    await jobEvents.poke();
+    json(res, { success: true });
     return;
   }
 

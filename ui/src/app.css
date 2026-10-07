@@ -179,6 +179,16 @@ section h2 small { font-size: 12px; font-weight: 400; color: var(--ink-3); }
 .p-top h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
 .p-sub { display: flex; gap: 8px; align-items: center; margin-top: 6px; color: var(--ink-3); font-size: 12px; flex-wrap: wrap; }
 .p-purpose { color: var(--ink-2); font-size: 13px; margin: 0; }
+.p-title { min-width: 0; flex: 1; }
+.p-editable { font: inherit; color: inherit; letter-spacing: inherit; text-align: left; background: none; border: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 5px; cursor: text; }
+.p-editable:hover { background: var(--hover); }
+.p-empty { color: var(--ink-3); font-style: italic; }
+.p-edit-name { display: block; width: calc(100% + 14px); box-sizing: border-box; font: inherit; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; color: var(--ink); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 6px; padding: 3px 6px; margin: -4px -7px; }
+.p-edit { display: flex; flex-direction: column; gap: 8px; }
+.p-edit-purpose { font: inherit; font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 8px; resize: vertical; }
+.p-edit-name:focus, .p-edit-purpose:focus { outline: 2px solid color-mix(in srgb, var(--ink) 25%, transparent); outline-offset: 0; }
+.p-edit-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.p-edit-row small { color: var(--ink-3); font-size: 11px; }
 .p-close { border: 0; background: none; color: var(--ink-3); cursor: pointer; padding: 4px; border-radius: 6px; }
 .p-close:hover { background: var(--hover); color: var(--ink); }
 .p-actions { display: flex; gap: 6px; flex-wrap: wrap; }

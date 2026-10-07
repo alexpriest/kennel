@@ -11,6 +11,7 @@
       <dt><span class="kbd">1</span>–<span class="kbd">5</span></dt><dd>Today, Daemons, Scheduled, Agents, Mac and third-party</dd>
       <dt><span class="kbd">j</span> <span class="kbd">k</span></dt><dd>Move through a list</dd>
       <dt><span class="kbd">↵</span></dt><dd>Open the selected job</dd>
+      <dt><span class="kbd">e</span></dt><dd>Rename or describe the open job</dd>
       <dt><span class="kbd">d</span></dt><dd>Dark or light mode</dd>
       <dt><span class="kbd">f</span></dt><dd>Text size</dd>
       <dt><span class="kbd">t</span></dt><dd>Next typeface</dd>

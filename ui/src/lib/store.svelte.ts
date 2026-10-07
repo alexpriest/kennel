@@ -90,6 +90,23 @@ class Store {
     }
   }
 
+  /** Rename or re-describe a job; a blank name returns it to its default. */
+  async saveMeta(job: Job, meta: { name?: string; purpose?: string }): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/jobs/${encodeURIComponent(job.id)}/meta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(meta),
+      });
+      const result = await res.json() as { success: boolean; message?: string };
+      this.say(result.success ? 'Saved' : `Didn't save: ${result.message ?? 'unknown error'}`);
+      return result.success;
+    } catch {
+      this.say(`Couldn't reach Kennel to save`);
+      return false;
+    }
+  }
+
   async askClaude(job: Job): Promise<void> {
     const logs = await fetch(`/api/jobs/${encodeURIComponent(job.id)}/logs?lines=40`)
       .then(r => r.json()).then((r: { lines: { stream: string; text: string }[] }) => r.lines).catch(() => []);
@@ -113,8 +130,8 @@ class Store {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
       });
-      const result = await res.json() as { success: boolean; message?: string };
-      this.say(result.success ? `Opened Claude on ${job.name}` : `Couldn't open Claude: ${result.message ?? 'unknown error'}`);
+      const result = await res.json() as { success: boolean; message?: string; terminal?: string };
+      this.say(result.success ? `Opened Claude on ${job.name} in ${result.terminal}` : `Couldn't open Claude. ${result.message ?? 'Unknown error.'}`);
     } catch {
       this.say(`Couldn't reach Kennel to open Claude`);
     }
