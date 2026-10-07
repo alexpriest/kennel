@@ -2,9 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { formatSchedule, nextRun } from '../src/schedule.js';
 import {
-  formatSchedule,
-  nextRun,
   obsidianUrl,
   parseHistory,
   listScheduledTasks,

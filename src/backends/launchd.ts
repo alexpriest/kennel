@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { promisify } from 'node:util';
 import type { Backend, Service, ServiceAction } from '../types.js';
+import { formatSchedule, type CalendarInterval } from '../schedule.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -12,7 +13,7 @@ interface PlistData {
   ProgramArguments?: string[];
   Program?: string;
   StartInterval?: number;
-  StartCalendarInterval?: Record<string, number> | Record<string, number>[];
+  StartCalendarInterval?: CalendarInterval | CalendarInterval[];
   RunAtLoad?: boolean;
   StandardOutPath?: string;
   StandardErrorPath?: string;
@@ -39,28 +40,6 @@ export function parseLaunchctlList(output: string): LaunchctlEntry[] {
     });
   }
   return entries;
-}
-
-function formatSchedule(plist: PlistData): string | undefined {
-  if (plist.StartInterval) {
-    const secs = plist.StartInterval;
-    if (secs >= 3600) return `every ${secs / 3600}h`;
-    if (secs >= 60) return `every ${secs / 60}m`;
-    return `every ${secs}s`;
-  }
-  if (plist.StartCalendarInterval) {
-    const cal = Array.isArray(plist.StartCalendarInterval)
-      ? plist.StartCalendarInterval[0]
-      : plist.StartCalendarInterval;
-    const parts: string[] = [];
-    if (cal.Hour !== undefined) parts.push(`${cal.Hour}:${String(cal.Minute ?? 0).padStart(2, '0')}`);
-    if (cal.Weekday !== undefined) {
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      parts.push(days[cal.Weekday] ?? `day ${cal.Weekday}`);
-    }
-    return parts.length > 0 ? parts.join(' ') : 'calendar';
-  }
-  return undefined;
 }
 
 export class LaunchdBackend implements Backend {
@@ -118,7 +97,7 @@ export class LaunchdBackend implements Backend {
         status,
         pid: entry?.pid ?? undefined,
         enabled: plist.RunAtLoad ?? false,
-        schedule: formatSchedule(plist),
+        schedule: plist.StartInterval || plist.StartCalendarInterval ? formatSchedule(plist) : undefined,
         configPath: filePath,
         command,
         cwd: plist.WorkingDirectory,
