@@ -108,9 +108,9 @@ kennel v0.2.0
 
 - **Today**: anything that needs a look (with Ask Claude to fix, Details, Mute for a day), today's runs on a timeline with one lane per domain and quiet hours folded, Coming up, Ran today.
 - **Daemons** (tiles with uptime, memory, process count), **Scheduled** (grouped by cadence, problems first), **Agents** (cards with next and last run, Run now, task doc), **Mac and third-party** (never alerted on).
-- A slide-over detail panel per job: honest actions (Start, Stop, Restart, Run now, Pause/Resume schedule, confirmed by launchd), facts, recent runs, and the merged log followed live.
+- A slide-over detail panel per job: click the name or description (or press `e`) to rename or describe it; a blank name returns the default. Own launchd jobs save descriptions to the `inventoryNotes` TOML (one line, in place), everything else to `notes`. Honest actions (Start, Stop, Restart, Run now, Pause/Resume schedule, confirmed by launchd), facts, recent runs, and the merged log followed live.
 - Search (⌘K), domain filters, Digs in the sidebar footer, and shortcuts: `1`–`5` views, `j`/`k`/`↵` lists, `d` theme, `f` text size, `t` typeface (Mona Sans default, SF Pro, Atkinson; fonts are bundled, no Google Fonts), `?` help, `esc` close.
-- Ask Claude to fix opens a Claude Code session (in the terminal set in config) with the job's purpose, problem, plist, log paths and last 40 log lines.
+- Ask Claude to fix opens a Claude Code session (in the `terminal` set in config, or the first installed one: Ghostty, cmux, iTerm2, Kitty, Alacritty, WezTerm, Warp, Terminal) with the job's purpose, problem, plist, log paths and last 40 log lines. The prompt goes to a file that a sourced launcher reads (`src/claude-launch.ts`), never through shell quoting; the first launch may trigger a macOS Automation prompt.
 
 UI logic that can be tested lives in `ui/src/lib/model.ts` and is covered by `tests/ui-model.test.ts`.
 
