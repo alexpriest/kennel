@@ -14,6 +14,7 @@ import { displayName, domainFor, isOwnLabel, parseInventoryNotes } from './metad
 import { FlapTracker, readDisabled, readLaunchctlPrint, readPsTable, treeStats, type PsRow } from './probe.js';
 import { readRuns, type LabelRuns, type RunStatus } from './runs.js';
 import { formatSchedule, nextRun } from './schedule.js';
+import { isWrapped } from './wrap.js';
 import { obsidianUrl, parseHistory, slugify, taskNameFromArgs, type RunRecord } from './scheduled.js';
 import type { BackendType, Service } from './types.js';
 
@@ -231,6 +232,9 @@ async function launchdJobs(config: KennelConfig, opts: CollectOptions, ps: Map<n
     if (wrapped) {
       lastRun = fromKennelRun(wrapped);
       recent = wrapped.recent;
+      source = 'kennel-run';
+    } else if (isWrapped(plist.ProgramArguments ?? [])) {
+      lastRun = null; // wrapped, and no run since
       source = 'kennel-run';
     } else if (taskName) {
       const task = await taskRecord(taskName, agents);

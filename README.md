@@ -58,6 +58,9 @@ kennel info <service>               # detailed service info (box-drawn card)
 kennel info imessage-attio          # partial name match works
 
 kennel jobs                         # every job as JSON: kind, honest state, last/next run, uptime, memory
+kennel wrap --all                   # route own scheduled jobs through kennel-run (backs up plists first)
+kennel wrap <label> [label...]      # wrap specific LaunchAgents
+kennel unwrap --all                 # undo
 
 kennel logs <service>               # recent logs, stdout + stderr merged ([err] marks stderr)
 kennel logs <service> --follow      # live tail of both streams
@@ -163,6 +166,10 @@ Add to `~/.claude.json`:
 ### kennel-run
 
 Wrap a LaunchAgent's command to give it run history: `ProgramArguments = [kennel-run, --, <command>, <args>…]` (add `--agent` for LLM tasks). It takes the label from launchd's `XPC_SERVICE_NAME`, passes output through to the job's own log files, passes the exit code back to launchd, and writes `~/.local/state/kennel/runs/<label>.json` plus `history.jsonl` (start, finish, exit code, duration, last 8 KB of merged output).
+
+`kennel wrap` does this for you: it rewrites the plist's `ProgramArguments` with `plutil`, backs up the original to `~/.local/state/kennel/plist-backups/` first, reloads the job only if it was loaded, and skips (never interrupts) a job that is running. A permission launcher app (`*.app/Contents/MacOS/...`) stays first so macOS still attributes the job's permissions to it. It uses the `node` on PATH rather than a versioned Homebrew Cellar path so `brew upgrade node` can't break jobs. Reinstalling a plist from a repo copy (for example `~/Code/system/deploy/`) undoes the wrap; Kennel shows that job's record source drop back to `launchd`.
+
+On the Mini, all 36 of Alex's own scheduled jobs were wrapped 2026-10-07; the 6 `com.alexpriest.task.*` agent jobs keep recording through `run_task.py`.
 
 ### Config (`~/.config/kennel/config.json`)
 

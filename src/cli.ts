@@ -6,6 +6,7 @@ import { formatServiceTable, formatServiceInfo, formatDoctorResults, formatActio
 import { listScheduledTasks } from './scheduled.js';
 import { listJobs } from './collect.js';
 import { followLogs } from './logs.js';
+import { applyWrap } from './wrap.js';
 import chalk from 'chalk';
 import type { BackendType, ServiceStatus } from './types.js';
 
@@ -153,6 +154,33 @@ program
   .action(async () => {
     console.log(JSON.stringify(await listJobs(), null, 2));
   });
+
+async function wrapCommand(mode: 'wrap' | 'unwrap', labels: string[], all: boolean): Promise<void> {
+  const jobs = (await listJobs()).filter(j => j.backend === 'launchd' && j.configPath);
+  const targets = all
+    ? jobs.filter(j => j.own && j.kind !== 'daemon' && (mode === 'wrap' ? j.scheduled?.source === 'launchd' : j.scheduled?.source === 'kennel-run'))
+    : jobs.filter(j => labels.includes(j.id));
+  const missing = labels.filter(l => !jobs.some(j => j.id === l));
+  for (const label of missing) console.log(chalk.red(`✖ ${label}: no such LaunchAgent`));
+  for (const job of targets) {
+    if (job.kind === 'daemon') { console.log(chalk.yellow(`- ${job.id}: daemon, skipped (kennel-run is for jobs that finish)`)); continue; }
+    const result = await applyWrap(job.id, job.configPath!, mode, { agent: job.kind === 'agent' });
+    const mark = { wrapped: chalk.green('✓'), unwrapped: chalk.green('✓'), unchanged: chalk.dim('='), running: chalk.yellow('…'), failed: chalk.red('✖') }[result.outcome];
+    console.log(`${mark} ${result.message}`);
+  }
+}
+
+program
+  .command('wrap [labels...]')
+  .description('Route LaunchAgents through kennel-run so every run is recorded (reversible)')
+  .option('--all', 'every own scheduled job that has no run record yet')
+  .action(async (labels: string[], opts) => wrapCommand('wrap', labels, !!opts.all));
+
+program
+  .command('unwrap [labels...]')
+  .description('Undo kennel wrap')
+  .option('--all', 'every job currently wrapped')
+  .action(async (labels: string[], opts) => wrapCommand('unwrap', labels, !!opts.all));
 
 program
   .command('ui')
