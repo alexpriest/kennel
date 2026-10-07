@@ -4,748 +4,242 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kennel Today Prototype</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,600;0,800;1,400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --paper: #F4EEE2;
-    --paper-raised: #FBF8F1;
-    --paper-deep: #ECE4D2;
-    --ink: #1F2328;
-    --ink-2: #474C54;
-    --ink-3: #5E636B;
-    --rule: #D6CCB9;
-    --hair: rgba(31, 35, 40, .38);
-
-    /* status: saturated, always paired with a shape and a word */
-    --fail: #C7362B;
-    --fail-wash: #FAEAE6;
-    --missed: #D18F12;
-
-    /* domain: muted, never red / amber / green hues */
-    --d-kit: #4A46BE;
-    --d-paloma: #A0397E;
-    --d-vault: #1C7281;
-    --d-home: #8A5A22;
-    --d-anth: #2E5E9C;
-    --d-mac: #676C74;
-
-    --font: "Rubik", "Helvetica Neue", Arial, sans-serif;
-    --side: 280px;
-
-    /* spacing scale */
-    --s2: 16px; --s3: 24px; --s4: 32px; --s6: 48px; --s8: 64px; --s12: 96px;
+:root {
+  --bg: #FFFFFF;
+  --side: #F6F5F2;
+  --line: #ECEAE5;
+  --line-strong: #E1DED7;
+  --ink: #1F1F1E;
+  --ink-2: #63615C;
+  --ink-3: #9B9890;
+  --hover: #EEECE7;
+  --active: #E7E4DD;
+  --attn: #B7791F;
+  --attn-bg: #FBF6EC;
+  --ok: #3F7D45;
+  --kit: #6E62C9;
+  --paloma: #B5527A;
+  --vault: #3C7F86;
+  --home: #9A6B3C;
+  --anth: #4C6FA8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1C1C1B; --side: #222220; --line: #2E2D2A; --line-strong: #3A3935;
+    --ink: #ECEAE5; --ink-2: #A9A69F; --ink-3: #75736D; --hover: #2B2A27; --active: #33322E;
+    --attn: #D9A24A; --attn-bg: #2A2519; --ok: #6FAE73;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #1C1C1B; --side: #222220; --line: #2E2D2A; --line-strong: #3A3935;
+  --ink: #ECEAE5; --ink-2: #A9A69F; --ink-3: #75736D; --hover: #2B2A27; --active: #33322E;
+  --attn: #D9A24A; --attn-bg: #2A2519; --ok: #6FAE73;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+svg.i { width: 16px; height: 16px; flex: none; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--kit); outline-offset: 2px; border-radius: 6px; }
 
-  * { box-sizing: border-box; }
-  html { background: var(--paper); }
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--font);
-    font-size: 17px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    font-variant-numeric: tabular-nums;
-  }
-  a { color: inherit; }
-  button, summary { font: inherit; color: inherit; }
-  :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
+.app { display: flex; min-height: 100vh; }
 
-  /* =========================================================
-     frame: margin column + page
-     ========================================================= */
-  .frame { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); min-height: 100vh; }
+.side {
+  width: 232px; flex: none; background: var(--side); border-right: 1px solid var(--line);
+  padding: 14px 10px; display: flex; flex-direction: column; gap: 18px;
+  position: sticky; top: 0; height: 100vh;
+}
+.brand { display: flex; align-items: center; gap: 9px; padding: 2px 6px; }
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 7px; background: var(--bg); border: 1px solid var(--line-strong);
+  display: grid; place-items: center; color: var(--ink);
+}
+.brand-mark svg { width: 17px; height: 17px; }
+.brand-name { font-size: 14px; font-weight: 600; letter-spacing: -0.005em; }
+.brand-sub { font-size: 12px; color: var(--ink-3); }
+.search {
+  display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 8px; width: 100%;
+  background: var(--bg); border: 1px solid var(--line-strong); border-radius: 7px; color: var(--ink-3); cursor: text; text-align: left;
+}
+.search span { flex: 1; }
+.kbd { flex: none !important; font-size: 11px; color: var(--ink-3); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 4px; line-height: 16px; }
+.group { display: flex; flex-direction: column; gap: 1px; }
+.group-label { font-size: 11px; font-weight: 600; color: var(--ink-3); padding: 0 8px 5px; }
+.nav {
+  display: flex; align-items: center; gap: 9px; height: 28px; padding: 0 8px; border-radius: 6px;
+  color: var(--ink-2); text-decoration: none; border: 0; background: transparent; width: 100%; text-align: left; cursor: pointer;
+}
+.nav:hover { background: var(--hover); color: var(--ink); }
+.nav[aria-current="page"] { background: var(--active); color: var(--ink); font-weight: 600; }
+.nav .label { flex: 1; }
+.nav .count { font-size: 12px; color: var(--ink-3); font-weight: 400; }
+.nav .count.hot { color: var(--attn); font-weight: 600; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 4px; }
+.side-foot { margin-top: auto; padding: 0 8px; font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.live { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
 
-  .side { background: var(--paper-deep); border-right: 2px solid var(--ink); }
-  .side-in {
-    position: sticky; top: 0;
-    min-height: 100vh; max-height: 100vh; overflow-y: auto;
-    display: flex; flex-direction: column;
-    padding: 24px 16px 18px;
-  }
+.main { flex: 1; min-width: 0; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 36px 40px 64px; display: flex; flex-direction: column; gap: 32px; }
+.head h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.head p { margin: 3px 0 0; color: var(--ink-2); }
 
-  .corner { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
-  .corner .digs-mark { width: 50px; height: auto; flex: none; display: block; color: var(--ink); }
-  .wordmark { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
-  .where { margin: 7px 0 0; font-size: 13.5px; line-height: 1.35; color: var(--ink-3); font-weight: 500; }
-  .where span { display: block; white-space: nowrap; }
-  .where .sep { display: none; }
+.attn {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: var(--attn-bg); border: 1px solid color-mix(in srgb, var(--attn) 22%, transparent); border-radius: 9px;
+}
+.attn > .i { color: var(--attn); }
+.attn-body { flex: 1; min-width: 0; }
+.attn-title { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.attn-meta { color: var(--ink-2); }
+.attn-actions { display: flex; gap: 6px; }
+.tag { font-size: 12px; font-weight: 500; color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.tag .dot { width: 6px; height: 6px; margin: 0; }
+.btn {
+  height: 28px; padding: 0 11px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--bg);
+  font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--hover); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.primary:hover { opacity: .88; background: var(--ink); }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--ink-2); }
 
-  .jump {
-    margin: 20px 0 0;
-    display: flex; align-items: center; gap: 9px;
-    width: 100%; height: 36px; padding: 0 8px 0 10px;
-    background: var(--paper-raised);
-    border: 1px solid var(--hair);
-    color: var(--ink-3); font-weight: 500; font-size: 15px;
-    cursor: text; text-align: left;
-  }
-  .jump:hover { border-color: var(--ink); }
-  .jump svg { width: 16px; height: 16px; flex: none; stroke: currentColor; }
-  .jump .t { flex: 1; }
-  .jump kbd {
-    font: 600 12px/1 var(--font); color: var(--ink-3);
-    border: 1px solid var(--hair); border-radius: 3px;
-    padding: 3px 5px 3px; background: var(--paper);
-  }
+section h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; }
+section h2 small { font-size: 12px; font-weight: 400; color: var(--ink-3); }
+.list { border-top: 1px solid var(--line); }
+.row {
+  display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  min-height: 38px; padding: 7px 4px; border-bottom: 1px solid var(--line);
+}
+.row .time { color: var(--ink-3); white-space: nowrap; }
+.row .name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.row .name b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .state { color: var(--ink-3); font-size: 12px; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.row .state.ok { color: var(--ok); }
+.row.folded { grid-template-columns: minmax(0, 1fr) auto; color: var(--ink-3); }
+.check { width: 13px; height: 13px; }
 
-  .group { margin: 0; padding: 0; list-style: none; }
-  .side h4 {
-    margin: 22px 0 6px; padding: 0 12px;
-    font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
-  }
-  .side h4:first-of-type { margin-top: 24px; }
-  .row {
-    position: relative;
-    display: flex; align-items: center; gap: 10px;
-    height: 36px; margin: 0 -16px; padding: 0 16px 0 28px;
-    width: calc(100% + 32px);
-    background: transparent; border: 0;
-    text-decoration: none; font-size: 16px; font-weight: 500; color: var(--ink);
-    cursor: pointer; text-align: left;
-  }
-  .row .ic { width: 18px; height: 18px; flex: none; stroke: var(--ink-2); fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-  .row .lbl { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row .n { font-size: 13.5px; font-weight: 500; color: var(--ink-3); }
-  .row:hover { background: var(--paper); }
-  .row:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; border-radius: 0; }
-  .row[aria-current] { background: var(--paper-raised); font-weight: 700; }
-  .row[aria-current]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink); }
-  .row[aria-current] .ic { stroke: var(--ink); stroke-width: 2; }
-  .row[aria-current] .n { color: var(--ink); font-weight: 700; }
-  .row[aria-current] .n.alert { color: var(--fail); }
-  .row.muted { color: var(--ink-3); }
-  .row.muted .ic { stroke: var(--ink-3); }
-  .row.muted .n { font-size: 13px; letter-spacing: .02em; }
-  .row.filter { height: 34px; }
-  .row.filter .sw { width: 12px; height: 12px; flex: none; margin: 0 3px; border-radius: 2px; }
-  .row.filter[aria-pressed="true"] { background: var(--paper-raised); font-weight: 700; }
-  .row.filter[aria-pressed="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink); }
+.fold {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 8px 4px;
+  border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; cursor: pointer;
+}
+.fold:hover { background: color-mix(in srgb, var(--hover) 60%, transparent); }
+.fold b { font-weight: 600; width: 96px; flex: none; }
+.fold span { flex: 1; color: var(--ink-2); }
+.fold .i { color: var(--ink-3); width: 14px; height: 14px; }
 
-  .side-foot { margin-top: auto; padding: 20px 12px 0; display: flex; flex-direction: column; gap: 10px; }
-  .live { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
-  .live i { width: 9px; height: 9px; background: var(--ink); border-radius: 50%; display: inline-block; animation: pulse 2.4s ease-in-out infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-  .preview { display: flex; align-items: center; flex-wrap: wrap; gap: 0 2px; font-size: 12px; color: var(--ink-3); }
-  .preview span { margin-right: 4px; }
-  .preview button {
-    border: 0; background: transparent; padding: 2px 5px; font-size: 12px; font-weight: 500; color: var(--ink-3);
-    cursor: pointer; border-bottom: 1px solid transparent;
-  }
-  .preview button:hover { color: var(--ink); }
-  .preview button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
-
-  .drawer summary { display: none; }
-
-  /* =========================================================
-     page: three levels
-     ========================================================= */
-  .page { max-width: 1040px; margin: 0 auto; padding: var(--s6) 56px var(--s12); }
-
-  /* ---------- level 1: the verdict, Digs on the ground rule, the incident ---------- */
-  .splash { position: relative; border-bottom: 2px solid var(--ink); padding-bottom: var(--s3); }
-  .splash-in { position: relative; min-height: 172px; }
-  .splash h2 { margin: 0 0 var(--s2); font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -0.025em; }
-  .splash h2 .count { color: var(--fail); }
-  .verdict { margin: 0; font-size: 22px; line-height: 32px; color: var(--ink-2); max-width: 64ch; }
-  .verdict strong, .verdict b { color: var(--ink); font-weight: 600; }
-  .verdict .ln { white-space: nowrap; }
-  .splash.flowing .verdict { max-width: none; }
-
-  .digs { position: absolute; right: 0; bottom: calc(-1 * var(--s3)); line-height: 0; color: var(--ink); }
-  .digs svg { display: block; transition: transform .22s ease; }
-  .digs:hover svg { transform: translateY(-2px); }
-
-  .incident {
-    position: relative;
-    margin-top: var(--s4);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--s2) var(--s6);
-    align-items: center;
-    padding: var(--s4) var(--s4) var(--s4) var(--s4);
-    background: var(--paper-raised);
-  }
-  .caption {
-    position: absolute; top: 0; left: 0;
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 6px 14px 6px 12px;
-    background: var(--fail); color: #fff;
-    font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase;
-    transform: translateY(-50%);
-  }
-  .caption .mark { width: 9px; height: 9px; background: #fff; display: inline-block; flex: none; }
-  .job-title {
-    margin: 0;
-    font-size: 24px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2;
-    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-  }
-  .domain { font-size: 15px; font-weight: 600; letter-spacing: .01em; text-decoration: none; }
-  .domain:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .dom-kit { color: var(--d-kit); }
-  .dom-paloma { color: var(--d-paloma); }
-  .dom-vault { color: var(--d-vault); }
-  .dom-home { color: var(--d-home); }
-  .dom-anth { color: var(--d-anth); }
-  .dom-mac { color: var(--d-mac); }
-  .purpose { margin: 6px 0 0; color: var(--ink-2); font-size: 17px; max-width: 64ch; }
-  .detail { margin: 8px 0 0; font-size: 17px; max-width: 64ch; }
-  .detail code { font-family: inherit; font-weight: 600; background: var(--fail-wash); color: var(--fail); padding: 1px 7px; }
-
-  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-height: 44px; padding: 0 18px;
-    border: 2px solid var(--ink);
-    background: var(--paper-raised);
-    font-weight: 600; font-size: 16px;
-    cursor: pointer; white-space: nowrap;
-    text-decoration: none;
-  }
-  .btn:hover { background: var(--paper); }
-  .btn.primary { background: var(--ink); color: var(--paper-raised); }
-  .btn.primary:hover { background: #000; }
-  .btn.quiet { border-color: transparent; border-bottom-color: var(--rule); color: var(--ink-2); padding: 0 12px; }
-  .btn.quiet:hover { border-bottom-color: var(--ink); background: transparent; }
-
-  /* ---------- level 2: today's runs ---------- */
-  .section { margin-top: var(--s12); }
-  .section-head {
-    display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); flex-wrap: wrap;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--ink);
-  }
-  .section-head h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
-  .section-head .sum { margin: 0; color: var(--ink-3); font-size: 15px; }
-  .section-head .sum b { color: var(--ink); font-weight: 600; }
-
-  .strip { position: relative; margin-top: var(--s4); height: 118px; }
-  .strip .hum { position: absolute; left: 0; right: 0; top: 44px; height: 32px; width: 100%; }
-  .strip .axis { position: absolute; left: 0; right: 0; top: 76px; height: 1px; background: var(--ink); }
-  .strip .hour {
-    position: absolute; top: 76px; transform: translateX(-50%);
-    font-size: 13px; color: var(--ink-3); font-weight: 500;
-    padding-top: 12px;
-  }
-  .strip .hour::before {
-    content: ""; position: absolute; top: 0; left: 50%; width: 1px; height: 7px; background: var(--ink);
-    transform: translateX(-50%);
-  }
-  .strip .hour.first { transform: none; }
-  .strip .hour.first::before { left: 0; transform: none; }
-  .strip .hour.last { transform: translateX(-100%); }
-  .strip .hour.last::before { left: auto; right: 0; transform: none; }
-  .run { position: absolute; top: 48px; width: 8px; height: 28px; transform: translateX(-50%); background: var(--ink); }
-  .run.todo { background: var(--paper); border: 1.5px solid var(--ink); }
-  .now { position: absolute; top: 8px; bottom: 42px; width: 1.5px; background: var(--ink); transform: translateX(-50%); }
-  .now .lbl {
-    position: absolute; top: -4px; left: 10px; white-space: nowrap;
-    font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-  }
-  .now .lbl span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-3); margin-left: 6px; }
-  .now::after {
-    content: ""; position: absolute; top: -1px; left: 50%; width: 10px; height: 10px;
-    background: var(--ink); border-radius: 50%; transform: translate(-50%, -50%);
-  }
-
-  .legend {
-    list-style: none; margin: var(--s2) 0 0; padding: 0;
-    display: flex; flex-wrap: wrap; gap: 8px var(--s4);
-    font-size: 15px; color: var(--ink-2);
-  }
-  .legend li { display: inline-flex; align-items: center; gap: 9px; }
-  .legend .g { width: 7px; height: 15px; background: var(--ink); flex: none; }
-  .legend .g.todo { background: var(--paper); border: 1.5px solid var(--ink); }
-  .legend .g.hum {
-    width: 22px; height: 11px; border: 0; background:
-      repeating-linear-gradient(to bottom, transparent 0 1px, var(--ink-3) 1px 2px, transparent 2px 4px);
-    opacity: .9;
-  }
-  .legend time { font-weight: 600; color: var(--ink); margin-right: 2px; }
-  .legend li.wide { flex-basis: 100%; }
-
-  /* ---------- level 3: agents and daemons, folded to a line ---------- */
-  .quiet-section { margin-top: var(--s8); border-top: 1px solid var(--rule); }
-  .quiet-section + .quiet-section { margin-top: 0; }
-  .quiet-section > summary {
-    list-style: none; cursor: pointer;
-    display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: var(--s3); align-items: baseline;
-    padding: var(--s3) 0;
-  }
-  .quiet-section > summary::-webkit-details-marker { display: none; }
-  .quiet-section > summary h3 { margin: 0; font-size: 18px; font-weight: 600; }
-  .quiet-section > summary p { margin: 0; color: var(--ink-2); font-size: 16px; }
-  .quiet-section > summary p b { color: var(--ink); font-weight: 600; }
-  .quiet-section > summary .disc { font-size: 14px; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
-  .quiet-section > summary .disc::before { content: "Show all"; }
-  .quiet-section[open] > summary .disc::before { content: "Hide"; }
-  .quiet-section > summary:hover .disc { color: var(--ink); }
-  .quiet-section > summary:focus-visible { outline-offset: 0; }
-  .quiet-body { padding: 0 0 var(--s4); }
-
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 14px 14px 14px 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
-  th { font-size: 12px; font-weight: 600; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; padding-top: 0; padding-bottom: 10px; }
-  th:last-child, td:last-child { text-align: right; padding-right: 0; }
-  td.c-state { width: 28px; padding-right: 0; padding-top: 19px; }
-  td.c-job .name { font-weight: 600; font-size: 16px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  td.c-job .name .domain { font-size: 13.5px; }
-  td.c-job .purpose { font-size: 15px; margin-top: 1px; color: var(--ink-3); }
-  td.c-when { white-space: nowrap; width: 160px; font-size: 15px; }
-  td.c-when .sub { display: block; color: var(--ink-3); font-size: 14px; }
-  td.c-cost { width: 90px; font-weight: 600; font-size: 15px; }
-  td .nil { color: var(--ink-3); font-weight: 400; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  .dot.ok { background: var(--ink); }
-  .dot.todo { border: 1.5px solid var(--ink); background: transparent; }
-  tr.script td { border-bottom: 0; }
-  tr.script .tag { font-size: 12px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-  .cast { margin: 0; padding: 0; font-size: 16px; line-height: 1.8; color: var(--ink-2); }
-  .cast dt, .cast dd { display: inline; margin: 0; }
-  .cast dt { font-weight: 600; }
-  .cast dt::after { content: " — "; color: var(--ink-3); font-weight: 400; }
-  .cast dd + dt::before { content: "  ·  "; color: var(--ink-3); white-space: pre; }
-  .cast a.more { font-weight: 500; color: var(--ink); text-underline-offset: 3px; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .live i { animation: none; }
-    .digs svg { transition: none; }
-    .digs:hover svg { transform: none; }
-  }
-
-  /* =========================================================
-     phone: the margin column folds into a top drawer
-     ========================================================= */
-  @media (max-width: 760px) {
-    .frame { display: block; }
-    .side { border-right: 0; border-bottom: 2px solid var(--ink); }
-    .side-in {
-      position: relative; min-height: 0; max-height: none; overflow: visible;
-      display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center;
-      gap: 0 10px; padding: 12px 16px 12px;
-    }
-    .corner { grid-column: 1; grid-row: 1; gap: 10px; padding: 0; }
-    .corner .digs-mark { width: 42px; }
-    .wordmark { font-size: 22px; }
-    .where { margin-top: 3px; font-size: 13px; }
-    .jump { grid-column: 2; grid-row: 1; margin: 0 84px 0 0; width: 40px; height: 40px; padding: 0; justify-content: center; }
-    .jump .t, .jump kbd { display: none; }
-    .drawer { grid-column: 1 / -1; grid-row: 2; }
-    .drawer summary {
-      display: inline-flex; align-items: center; justify-content: center;
-      position: absolute; right: 16px; top: 12px;
-      height: 40px; padding: 0 12px;
-      border: 2px solid var(--ink); background: var(--paper-raised);
-      font-weight: 600; font-size: 15px; cursor: pointer; list-style: none; user-select: none;
-    }
-    .drawer summary::-webkit-details-marker { display: none; }
-    .drawer summary::after { content: "Menu"; }
-    .drawer[open] summary::after { content: "Close"; }
-    .drawer[open] { padding-top: 8px; }
-    .side h4 { margin: 16px 0 4px; padding: 0 12px; }
-    .side h4:first-of-type { margin-top: 8px; }
-    .row { height: 40px; }
-    .row.filter { height: 38px; }
-    .side-foot { grid-column: 1 / -1; grid-row: 3; display: none; }
-    .drawer[open] ~ .side-foot { display: flex; padding-top: 12px; }
-
-    .page { padding: var(--s4) 16px var(--s8); }
-    .splash { padding-bottom: 0; }
-    .splash-in { min-height: 0; }
-    .splash h2 { font-size: 40px; margin-bottom: 12px; }
-    .verdict { font-size: 18px; line-height: 27px; }
-    .digs { position: static; margin: var(--s2) 0 0 -6px; }
-    .incident { grid-template-columns: 1fr; padding: var(--s3) 18px; gap: 18px; margin-top: var(--s4); }
-    .job-title { font-size: 22px; }
-    .actions { display: grid; grid-template-columns: 1fr 1fr; }
-    .actions .btn.primary { grid-column: 1 / -1; }
-    .section { margin-top: var(--s8); }
-    .strip { height: 114px; }
-    .strip .hour.mid { display: none; }
-    .legend { flex-direction: column; gap: 6px; }
-    .quiet-section { margin-top: var(--s6); }
-    .quiet-section > summary { grid-template-columns: 1fr auto; }
-    .quiet-section > summary p { grid-column: 1 / -1; }
-    .quiet-body { padding-left: 0; }
-
-    table, thead, tbody, tr, td, th { display: block; }
-    thead { display: none; }
-    tr { position: relative; padding: 14px 0 14px 24px; border-bottom: 1px solid var(--rule); }
-    td { border: 0; padding: 0; width: auto; }
-    td.c-state { position: absolute; left: 0; top: 19px; padding: 0; width: auto; }
-    td.c-when, td.c-cost { display: inline-block; width: auto; text-align: left; margin-top: 6px; margin-right: 20px; font-size: 14px; white-space: normal; }
-    td.c-when .sub { display: inline; }
-    td.c-when .sub::before { content: " · "; color: var(--ink-3); }
-    td.c-when::before, td.c-cost::before { content: attr(data-label) " "; color: var(--ink-3); font-weight: 500; }
-    td.c-cost.nil-cell { display: none; }
-    tr.script { border-bottom: 0; }
-  }
+@media (max-width: 760px) {
+  .app { flex-direction: column; }
+  .side { width: auto; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .side .group, .side-foot { display: none; }
+  .search { flex: 1; min-width: 140px; width: auto; }
+  .wrap { padding: 22px 16px 48px; gap: 26px; }
+  .attn { flex-wrap: wrap; align-items: flex-start; }
+  .attn-actions { width: 100%; padding-left: 28px; }
+  .row { grid-template-columns: 72px minmax(0, 1fr); }
+  .row .state { grid-column: 2; }
+  .row.folded { grid-template-columns: minmax(0, 1fr); }
+  .row.folded .state { grid-column: 1; }
+  .fold b { width: 72px; }
+}
 </style>
 </head>
 <body>
-<div class="frame">
-
-  <!-- ============ the margin column ============ -->
-  <aside class="side" aria-label="Kennel navigation">
-    <div class="side-in">
-      <div class="corner">
-        <svg class="digs-mark" viewBox="-1 22 258 212" role="img" aria-label="Digs"><g transform="translate(0.000000,256.000000) scale(0.100000,-0.100000)"><path fill="currentColor" d="M1265 2276 c-256 -51 -397 -170 -570 -480 -89 -160 -143 -193 -412 -246 -214 -42 -259 -82 -234 -204 68 -327 285 -492 681 -516 261 -15 344 -98 424 -422 33 -132 41 -152 55 -129 17 27 -52 269 -107 374 -82 157 -190 217 -393 217 -265 0 -480 119 -570 315 -30 65 -26 76 23 69 72 -9 175 65 206 146 11 28 -8 90 -28 90 -30 0 -5 30 33 40 208 54 269 97 354 255 175 323 344 447 633 462 176 9 363 -36 490 -117 57 -36 68 -70 24 -70 -34 0 -99 -37 -112 -64 -6 -11 -13 -68 -15 -126 -4 -85 -16 -148 -61 -326 -87 -341 -104 -507 -71 -669 74 -357 344 -413 617 -127 224 235 312 405 275 533 -18 59 -194 366 -313 545 -224 338 -592 516 -929 450z m741 -281 c61 -36 142 -145 284 -382 243 -406 245 -430 54 -683 -196 -260 -344 -356 -495 -320 -137 33 -209 179 -209 426 0 147 14 231 87 529 46 186 57 248 58 322 2 58 7 98 15 108 34 41 137 41 206 0z M1131 1977 c-14 -18 -4 -27 31 -27 44 0 92 -24 121 -61 22 -29 27 -31 33 -16 20 52 -149 146 -185 104z M1056 1745 c-53 -49 -62 -125 -20 -174 49 -58 130 -22 154 69 26 97 -65 169 -134 105z M760 1103 c-33 -33 -93 -63 -143 -71 -57 -10 -59 -38 -2 -35 74 5 209 92 191 122 -10 15 -17 13 -46 -16z"/></g></svg>
-        <div class="corner-text">
-          <h1 class="wordmark">Kennel</h1>
-          <p class="where"><span>Tuesday, Oct 6</span><span class="sep"> · </span><span>Mac Mini · 60 jobs</span></p>
-        </div>
-      </div>
-
-      <button class="jump" type="button" aria-label="Jump to anything (command K)">
-        <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke-width="1.75" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
-        <span class="t">Jump to…</span><kbd>⌘K</kbd>
-      </button>
-
-      <details class="drawer" open>
-        <summary aria-label="Menu"></summary>
-        <nav aria-label="Views">
-          <h4 id="g-views">Views</h4>
-          <ul class="group" aria-labelledby="g-views">
-            <li><a class="row" href="#today" aria-current="page">
-              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7"/><circle cx="9" cy="9" r="1.6" fill="currentColor" stroke="none"/></svg>
-              <span class="lbl">Today</span><span class="n alert">1</span></a></li>
-            <li><a class="row" href="#daemons">
-              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5.5q1.75-2 3.5 0t3.5 0t3.5 0t3.5 0M2 9.5q1.75-2 3.5 0t3.5 0t3.5 0t3.5 0M2 13.5q1.75-2 3.5 0t3.5 0t3.5 0t3.5 0"/></svg>
-              <span class="lbl">Daemons</span><span class="n">16</span></a></li>
-            <li><a class="row" href="#scheduled">
-              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l2.6 1.8"/></svg>
-              <span class="lbl">Scheduled</span><span class="n">35</span></a></li>
-            <li><a class="row" href="#agents">
-              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 4h12v8H8.5L5 15v-3H3z"/></svg>
-              <span class="lbl">Agents</span><span class="n">6</span></a></li>
-            <li><a class="row muted" href="#hidden">
-              <svg class="ic" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 9s2.6-4.5 7-4.5S16 9 16 9s-2.6 4.5-7 4.5S2 9 2 9z"/><circle cx="9" cy="9" r="2"/><path d="M3.5 14.5 14.5 3.5"/></svg>
-              <span class="lbl">Mac &amp; third-party</span><span class="n">hidden</span></a></li>
-          </ul>
-        </nav>
-        <div role="group" aria-labelledby="g-domains">
-          <h4 id="g-domains">Filter by domain</h4>
-          <ul class="group">
-            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-kit)" aria-hidden="true"></i><span class="lbl">Kit</span></button></li>
-            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-paloma)" aria-hidden="true"></i><span class="lbl">Paloma</span></button></li>
-            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-vault)" aria-hidden="true"></i><span class="lbl">Vault and memory</span></button></li>
-            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-home)" aria-hidden="true"></i><span class="lbl">Home and family</span></button></li>
-            <li><button class="row filter" type="button" aria-pressed="false"><i class="sw" style="background:var(--d-anth)" aria-hidden="true"></i><span class="lbl">Anthimeros</span></button></li>
-          </ul>
-        </div>
-      </details>
-
-      <div class="side-foot">
-        <span class="live"><i aria-hidden="true"></i>live</span>
-        <div class="preview" aria-label="Preview Digs in each state">
-          <span>Digs</span>
-          <button type="button" data-set="quiet" aria-pressed="false">quiet</button>
-          <button type="button" data-set="alert" aria-pressed="false">alert</button>
-          <button type="button" data-set="missed" aria-pressed="false">missed</button>
-          <button type="button" data-set="failed" aria-pressed="true">failed</button>
-        </div>
-      </div>
+<div class="app">
+  <aside class="side" aria-label="Kennel">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><path d="M11.25 16.25h1.5L12 17zM16 14v.5"/><path d="M4.42 11.247A13.2 13.2 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444a11.7 11.7 0 0 0-.493-3.309M8 14v.5"/><path d="M8.5 8.5c-.384 1.05-1.083 2.028-2.344 2.5c-1.931.722-3.576-.297-3.656-1c-.113-.994 1.177-6.53 4-7c1.923-.321 3.651.845 3.651 2.235A7.5 7.5 0 0 1 14 5.277c0-1.39 1.844-2.598 3.767-2.277c2.823.47 4.113 6.006 4 7c-.08.703-1.725 1.722-3.656 1c-1.261-.472-1.855-1.45-2.239-2.5"/></g></svg></span>
+      <div><div class="brand-name">Kennel</div><div class="brand-sub">Mac Mini</div></div>
     </div>
+
+    <button class="search" type="button" aria-label="Search jobs">
+      <svg class="i" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m21 21l-4.34-4.34"/><circle cx="11" cy="11" r="8"/></g></svg>
+      <span>Search</span><span class="kbd">⌘K</span>
+    </button>
+
+    <nav class="group" aria-label="Views">
+      <a class="nav" href="#" aria-current="page">
+        <svg class="i" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></g></svg>
+        <span class="label">Today</span><span class="count hot">1</span></a>
+      <a class="nav" href="#">
+        <svg class="i" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><path d="M6 6h.01M6 18h.01"/></g></svg>
+        <span class="label">Daemons</span><span class="count">16</span></a>
+      <a class="nav" href="#">
+        <svg class="i" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></g></svg>
+        <span class="label">Scheduled</span><span class="count">35</span></a>
+      <a class="nav" href="#">
+        <svg class="i" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2m16 0h2m-7-1v2m-6-2v2"/></g></svg>
+        <span class="label">Agents</span><span class="count">6</span></a>
+      <a class="nav" href="#">
+        <svg class="i" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575a1 1 0 0 1 0 .696a10.8 10.8 0 0 1-1.444 2.49m-6.41-.679a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151a1 1 0 0 1 0-.696a10.75 10.75 0 0 1 4.446-5.143M2 2l20 20"/></g></svg>
+        <span class="label">Mac and third-party</span><span class="count">hidden</span></a>
+    </nav>
+
+    <div class="group" role="group" aria-label="Filter by domain">
+      <div class="group-label">Domains</div>
+      <button class="nav" type="button" aria-pressed="false"><span class="dot" style="background: var(--kit)"></span><span class="label">Kit</span></button>
+      <button class="nav" type="button" aria-pressed="false"><span class="dot" style="background: var(--paloma)"></span><span class="label">Paloma</span></button>
+      <button class="nav" type="button" aria-pressed="false"><span class="dot" style="background: var(--vault)"></span><span class="label">Vault and memory</span></button>
+      <button class="nav" type="button" aria-pressed="false"><span class="dot" style="background: var(--home)"></span><span class="label">Home and family</span></button>
+      <button class="nav" type="button" aria-pressed="false"><span class="dot" style="background: var(--anth)"></span><span class="label">Anthimeros</span></button>
+    </div>
+
+    <div class="side-foot"><span class="live"></span>Live</div>
   </aside>
 
-  <!-- ============ the page ============ -->
-  <main class="page">
+  <main class="main">
+    <div class="wrap">
+      <header class="head">
+        <h1>Today</h1>
+        <p>Tuesday, Oct 6 · 59 of 60 jobs healthy</p>
+      </header>
 
-    <!-- level 1: verdict, Digs on the ground rule, the incident -->
-    <section class="splash" id="today" aria-labelledby="state">
-      <div class="splash-in">
-        <h2 id="state"><span class="count">One</span> problem.</h2>
-        <p class="verdict" id="verdict"><strong>Agent sync failed and has not run since.</strong> The other 59 jobs are fine: 16 daemons up, 34 scheduled jobs on time, and $2.31 of agent spend this month.</p>
-        <div class="digs" id="digs" role="img" aria-label="Digs, barking: something failed" data-state="failed"></div>
-      </div>
-    </section>
-
-    <article class="incident" aria-label="Agent sync, failed">
-      <span class="caption"><span class="mark" aria-hidden="true"></span>Failed</span>
-      <div>
-        <h3 class="job-title">Agent sync <a class="domain dom-kit" href="#kit">Kit</a></h3>
-        <p class="purpose">Regenerates every agent instruction file from the canonical sources.</p>
-        <p class="detail">The last run exited with <code>code 3</code> and it has not run since.</p>
-      </div>
-      <div class="actions">
-        <button class="btn primary" type="button">Ask Kit to fix</button>
-        <a class="btn" href="#log">View log</a>
-        <button class="btn quiet" type="button">Mute for a day</button>
-      </div>
-    </article>
-
-    <!-- level 2: today's runs -->
-    <section class="section" id="scheduled" aria-labelledby="h-today">
-      <div class="section-head">
-        <h3 id="h-today">Today's runs</h3>
-        <p class="sum"><b>35 scheduled jobs</b> · 34 on time · 1 failed, above</p>
+      <div class="attn" role="status">
+        <svg class="i" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></g></svg>
+        <div class="attn-body">
+          <div class="attn-title">Agent sync <span class="tag"><span class="dot" style="background: var(--kit)"></span>Kit</span></div>
+          <div class="attn-meta">Exited with code 3 and hasn't run since. Regenerates agent instruction files.</div>
+        </div>
+        <div class="attn-actions">
+          <button class="btn primary" type="button">Ask Kit to fix</button>
+          <button class="btn" type="button">Log</button>
+          <button class="btn quiet" type="button">Mute</button>
+        </div>
       </div>
 
-      <div class="strip" role="img" aria-label="Timeline of today's scheduled runs. Completed: 3:30am activity digest; 5:00am Kit rebuild and CRM contacts. Now is about 10:00am. Upcoming: 1:00pm changelog; 9:00pm memory distillation. Fourteen jobs on 5, 15 and 30 minute loops have run all morning without a problem.">
-        <svg class="hum" aria-hidden="true">
-          <defs>
-            <pattern id="hum-ink" width="36" height="9" patternUnits="userSpaceOnUse">
-              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".4" stroke-width="1.1"/>
-            </pattern>
-            <pattern id="hum-faint" width="36" height="9" patternUnits="userSpaceOnUse">
-              <path d="M0 4.5 Q9 1 18 4.5 T36 4.5" fill="none" stroke="#1F2328" stroke-opacity=".13" stroke-width="1.1" stroke-dasharray="3 4"/>
-            </pattern>
-          </defs>
-          <rect x="0" y="0" width="41.67%" height="32" fill="url(#hum-ink)"/>
-          <rect x="41.67%" y="0" width="58.33%" height="32" fill="url(#hum-faint)"/>
-        </svg>
+      <section aria-labelledby="up">
+        <h2 id="up">Coming up</h2>
+        <div class="list">
+          <div class="row"><span class="time">1:00 PM</span><span class="name"><b>Claude Code Changelog</b><span class="tag"><span class="dot" style="background: var(--vault)"></span>Vault</span></span><span class="state">First run</span></div>
+          <div class="row"><span class="time">9:00 PM</span><span class="name"><b>Memory Distillation</b><span class="tag"><span class="dot" style="background: var(--vault)"></span>Vault</span></span><span class="state">First run</span></div>
+          <div class="row"><span class="time">Wed 4:55 AM</span><span class="name"><b>Daily Briefing</b><span class="tag"><span class="dot" style="background: var(--kit)"></span>Kit</span></span><span class="state">Last run took 4m 03s</span></div>
+          <div class="row"><span class="time">Fri 4:00 PM</span><span class="name"><b>Weekly Review</b><span class="tag"><span class="dot" style="background: var(--kit)"></span>Kit</span></span><span class="state">First run</span></div>
+        </div>
+      </section>
 
-        <div class="axis"></div>
-        <span class="hour first" style="left:0">12am</span>
-        <span class="hour mid" style="left:16.667%">4am</span>
-        <span class="hour" style="left:33.333%">8am</span>
-        <span class="hour mid" style="left:50%">noon</span>
-        <span class="hour" style="left:66.667%">4pm</span>
-        <span class="hour mid" style="left:83.333%">8pm</span>
-        <span class="hour last" style="left:100%">12am</span>
+      <section aria-labelledby="ran">
+        <h2 id="ran">Ran today <small>all succeeded</small></h2>
+        <div class="list">
+          <div class="row"><span class="time">3:30 AM</span><span class="name"><b>Activity digest</b><span class="tag"><span class="dot" style="background: var(--vault)"></span>Vault</span></span><span class="state ok"><svg class="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Succeeded</span></div>
+          <div class="row"><span class="time">5:00 AM</span><span class="name"><b>Kit rebuild</b><span class="tag"><span class="dot" style="background: var(--kit)"></span>Kit</span></span><span class="state ok"><svg class="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Succeeded</span></div>
+          <div class="row"><span class="time">5:00 AM</span><span class="name"><b>CRM contacts</b><span class="tag"><span class="dot" style="background: var(--vault)"></span>Vault</span></span><span class="state ok"><svg class="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Succeeded</span></div>
+          <div class="row folded"><span>14 jobs that run every 5 to 30 minutes</span><span class="state ok"><svg class="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>All healthy</span></div>
+        </div>
+      </section>
 
-        <span class="run" style="left:14.583%" title="3:30am activity digest, succeeded"></span>
-        <span class="run" style="left:20.833%" title="5:00am Kit rebuild and CRM contacts, succeeded"></span>
-        <span class="run todo" style="left:54.167%" title="1:00pm changelog, upcoming"></span>
-        <span class="run todo" style="left:87.5%" title="9:00pm memory distillation, upcoming"></span>
-
-        <div class="now" style="left:41.667%"><span class="lbl">Now<span>about 10:00am</span></span></div>
-      </div>
-
-      <ul class="legend">
-        <li><span class="g" aria-hidden="true"></span><span><time>3:30am</time> activity digest</span></li>
-        <li><span class="g" aria-hidden="true"></span><span><time>5:00am</time> Kit rebuild, CRM contacts</span></li>
-        <li><span class="g todo" aria-hidden="true"></span><span><time>1:00pm</time> Claude Code changelog, first run</span></li>
-        <li><span class="g todo" aria-hidden="true"></span><span><time>9:00pm</time> memory distillation, first run</span></li>
-        <li class="wide"><span class="g hum" aria-hidden="true"></span><span>14 jobs on 5-, 15- and 30-minute loops, all fine since midnight</span></li>
-      </ul>
-    </section>
-
-    <!-- level 3: agents and daemons, each folded to one line -->
-    <details class="quiet-section" id="agents">
-      <summary>
-        <h3>Agents</h3>
-        <p><b>6 scheduled.</b> October so far $2.31, one run (Daily Briefing, Mon). Next up: Claude Code Changelog today at 1:00pm, its first run.</p>
-        <span class="disc" aria-hidden="true"></span>
-      </summary>
-      <div class="quiet-body">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col"><span class="sr">State</span></th>
-              <th scope="col">Agent</th>
-              <th scope="col">Last run</th>
-              <th scope="col">Next</th>
-              <th scope="col">Cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
-              <td class="c-job">
-                <div class="name">Daily Briefing <a class="domain dom-kit" href="#kit">Kit</a></div>
-                <p class="purpose">Texts you what matters today.</p>
-              </td>
-              <td class="c-when" data-label="Last run">Mon 12:35pm<span class="sub">test run · 4m 03s</span></td>
-              <td class="c-when" data-label="Next">Wed 4:55am</td>
-              <td class="c-cost" data-label="Cost">$2.31</td>
-            </tr>
-            <tr>
-              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-              <td class="c-job">
-                <div class="name">Claude Code Changelog <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
-                <p class="purpose">Reads each new release and notes what's worth adopting.</p>
-              </td>
-              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-              <td class="c-when" data-label="Next">Today 1:00pm<span class="sub">first run</span></td>
-              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-            </tr>
-            <tr>
-              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-              <td class="c-job">
-                <div class="name">Memory Distillation <a class="domain dom-vault" href="#vault">Vault and memory</a></div>
-                <p class="purpose">Turns the day's log into lasting memory.</p>
-              </td>
-              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-              <td class="c-when" data-label="Next">Today 9:00pm<span class="sub">first run</span></td>
-              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-            </tr>
-            <tr>
-              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-              <td class="c-job">
-                <div class="name">Weekly Review <a class="domain dom-kit" href="#kit">Kit</a></div>
-                <p class="purpose">Catches you up on the whole week if it's the only thing you read.</p>
-              </td>
-              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-              <td class="c-when" data-label="Next">Fri 4:00pm</td>
-              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-            </tr>
-            <tr>
-              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-              <td class="c-job">
-                <div class="name">Project Refresh <a class="domain dom-kit" href="#kit">Kit</a></div>
-              </td>
-              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-              <td class="c-when" data-label="Next">Sun 9:00am</td>
-              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-            </tr>
-            <tr>
-              <td class="c-state"><span class="dot todo" title="has not run yet"></span></td>
-              <td class="c-job">
-                <div class="name">Maven Watch <a class="domain dom-home" href="#home">Home and family</a></div>
-              </td>
-              <td class="c-when" data-label="Last run"><span class="nil">not yet</span></td>
-              <td class="c-when" data-label="Next">Nov 1, 1:00pm</td>
-              <td class="c-cost nil-cell" data-label="Cost"><span class="nil">—</span></td>
-            </tr>
-            <tr class="script">
-              <td class="c-state"><span class="dot ok" title="last run succeeded"></span></td>
-              <td class="c-job">
-                <div class="name">Alice Payroll <a class="domain dom-home" href="#home">Home and family</a> <span class="tag">script, no AI</span></div>
-                <p class="purpose">Submits nanny payroll from the calendar.</p>
-              </td>
-              <td class="c-when" data-label="Last run">Mon 12:12pm<span class="sub">by hand</span></td>
-              <td class="c-when" data-label="Next">Mon 9:00am</td>
-              <td class="c-cost" data-label="Cost"><span class="nil">none</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </details>
-
-    <details class="quiet-section" id="daemons">
-      <summary>
-        <h3>Daemons</h3>
-        <p><b>16 up.</b> None down, none flapping.</p>
-        <span class="disc" aria-hidden="true"></span>
-      </summary>
-      <div class="quiet-body">
-        <dl class="cast">
-          <dt class="dom-kit">Kit</dt>
-          <dd>Kit on iMessage, Kit gateway, Kit email, Message filter</dd>
-          <dt class="dom-vault">Vault and memory</dt>
-          <dd>Content vault sync</dd>
-          <dt class="dom-anth">Anthimeros</dt>
-          <dd>Agent runner</dd>
-          <dt class="dom-home">Home and family</dt>
-          <dd>Bike garage door</dd>
-          <dt class="dom-mac">Mac</dt>
-          <dd>AirDrop watchdog, <a class="more" href="#all-daemons">and 8 more</a></dd>
-        </dl>
-      </div>
-    </details>
-
+      <section aria-label="Everything else">
+        <div class="list">
+          <button class="fold" type="button" aria-expanded="false"><b>Agents</b><span>6 scheduled, next is Claude Code Changelog at 1:00 PM</span><svg class="i" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18l6-6l-6-6"/></svg></button>
+          <button class="fold" type="button" aria-expanded="false"><b>Daemons</b><span>16 running, none down</span><svg class="i" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18l6-6l-6-6"/></svg></button>
+        </div>
+      </section>
+    </div>
   </main>
 </div>
-
-<script>
-/* ---------- Digs: four drawings vectorized from the originals; ink is currentColor so he matches the page. ---------- */
-(function () {
-  const ART = {"quiet":{"vb":[63,130,345,217],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1695 3443 c-16 -1 -54 -6 -82 -9 -38 -4 -53 -10 -53 -21 0 -12 12 -14 75 -8 93 9 94 7 14 -103 -83 -113 -82 -118 6 -113 95 4 151 15 145 26 -3 6 -39 9 -82 7 -97 -3 -97 -2 -13 112 63 86 73 120 31 115 -6 -1 -24 -4 -41 -6z M2765 3003 c-152 -20 -325 -71 -502 -149 -146 -65 -120 -64 -234 -5 -276 145 -557 126 -796 -53 -142 -107 -223 -263 -238 -460 -8 -106 -28 -132 -175 -241 -173 -127 -181 -197 -36 -315 63 -50 62 -49 40 -92 -72 -140 116 -261 330 -214 l77 18 33 -30 c71 -62 273 -90 368 -50 49 20 75 22 358 28 305 6 305 6 373 34 65 26 70 27 152 17 46 -6 107 -7 134 -4 45 5 59 2 118 -29 271 -141 695 -145 973 -9 102 50 208 153 252 247 49 102 49 238 0 336 -22 46 -31 74 -27 91 9 35 -12 165 -39 245 -114 335 -394 560 -780 627 -81 14 -300 19 -381 8z m287 -33 c371 -35 657 -214 794 -495 152 -315 91 -585 -160 -704 -119 -57 -168 -66 -346 -65 -255 1 -333 31 -390 149 -147 301 53 609 376 581 100 -8 105 15 8 33 -111 21 -276 -38 -356 -128 -117 -129 -142 -292 -73 -465 15 -37 24 -70 21 -74 -4 -3 -42 6 -86 21 -129 44 -219 34 -268 -28 -28 -36 -38 -32 -57 25 -28 84 -56 83 -31 -1 33 -109 16 -192 -53 -261 -76 -76 -113 -83 -430 -80 -257 2 -266 1 -336 -23 -95 -33 -215 -35 -245 -5 -34 34 -23 95 24 132 31 24 11 35 -22 11 -35 -26 -52 -59 -52 -105 0 -43 -4 -44 -60 -22 -25 10 -47 28 -56 46 -11 20 -19 27 -27 20 -37 -28 -212 -43 -235 -20 -7 7 -12 31 -12 53 0 56 28 85 80 85 21 0 41 4 45 9 3 6 49 34 102 63 98 54 208 142 197 159 -3 5 -27 -8 -52 -29 -62 -51 -123 -92 -200 -132 -80 -42 -141 -39 -249 15 -63 31 -96 65 -63 65 16 0 90 71 106 101 32 62 5 127 -61 149 -47 16 -44 27 25 82 99 80 112 104 121 217 22 281 211 489 499 547 134 27 360 7 360 -31 0 -8 -8 -15 -17 -15 -27 -1 -103 -37 -103 -50 0 -6 13 -3 33 7 54 29 178 24 250 -9 147 -69 388 -420 403 -589 21 -231 -131 -439 -321 -439 -199 0 -281 146 -305 545 -16 264 -47 415 -86 415 -17 0 -18 5 6 -62 19 -54 29 -139 50 -423 10 -136 35 -256 65 -316 34 -64 27 -69 -134 -115 -52 -14 -108 -32 -125 -40 l-31 -13 41 -1 c22 0 87 14 145 31 154 45 154 45 190 15 205 -173 494 -9 539 304 21 146 -95 398 -274 597 -25 28 -46 55 -46 61 0 12 150 81 260 120 148 52 322 85 480 91 19 0 83 -4 142 -9z m923 -970 c3 -5 10 -37 16 -70 34 -215 -104 -403 -361 -492 -186 -64 -536 -65 -735 -1 -202 64 -354 213 -319 311 31 86 135 90 339 13 218 -82 268 -93 430 -94 278 -2 485 101 571 281 28 58 45 74 59 52z m-3032 -316 c53 -18 55 -21 27 -66 -11 -18 -20 -48 -20 -65 0 -41 -25 -44 -68 -8 -37 31 -48 73 -32 120 13 40 25 42 93 19z m1621 -51 c8 -16 28 -41 45 -57 45 -43 40 -56 -18 -56 -110 0 -127 13 -91 72 11 18 20 41 20 51 0 27 28 20 44 -10z M1502 2299 c-51 -63 -148 -78 -212 -31 -39 29 -53 7 -16 -24 72 -62 206 -41 260 40 33 52 6 64 -32 15z","left":[-1,-1,108,92,91,92,105,104,103,101,100,98,97,95,94,94,95,-1,-1,-1,-1,-1,-1,-1,215,202,193,98,86,79,74,70,66,63,60,58,55,53,51,50,48,47,45,44,43,42,41,40,39,38,38,37,37,36,36,36,36,36,35,35,35,35,34,33,31,29,27,25,22,19,17,14,11,9,7,6,5,4,4,4,4,5,6,8,9,12,14,16,19,19,18,17,17,17,17,17,18,18,20,22,25,29,37,64,69,78,231,241,-1]},"alert":{"vb":[43,103,414,269],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1601 3709 c-135 -24 -256 -94 -365 -212 -44 -49 -94 -95 -109 -103 -30 -16 -186 -33 -307 -34 -156 0 -212 -87 -164 -251 57 -190 163 -285 408 -365 159 -51 167 -56 207 -137 83 -163 114 -330 97 -512 -5 -60 -7 -156 -4 -212 l6 -101 -33 -28 c-74 -63 -218 -110 -481 -158 -72 -13 -156 -33 -186 -45 -216 -81 -254 -300 -60 -342 19 -4 55 -13 80 -19 33 -8 62 -8 112 0 l68 12 40 -35 c24 -23 53 -38 77 -42 21 -3 57 -10 81 -15 65 -15 129 -12 217 11 71 19 118 22 420 28 362 6 395 11 455 66 13 12 27 12 100 -2 119 -22 335 -21 493 1 l129 19 21 -26 c27 -31 60 -48 112 -58 22 -4 59 -12 83 -18 30 -8 100 -8 240 -1 108 5 249 10 312 10 256 0 368 50 433 191 20 45 26 50 76 65 218 63 357 299 355 604 0 206 -49 344 -143 407 -43 29 -56 29 -87 -2 l-25 -25 7 -148 c9 -211 -24 -340 -109 -430 -41 -43 -50 -41 -71 19 -43 120 -172 275 -295 354 -210 136 -401 159 -801 95 -840 -133 -1208 165 -1024 829 19 67 39 79 49 29 36 -168 137 -387 216 -467 155 -158 309 -123 439 100 113 193 89 285 -118 447 -48 37 -140 115 -205 174 -66 59 -135 114 -155 124 -21 9 -57 36 -82 59 -127 117 -333 176 -509 144z m296 -54 c128 -43 232 -125 159 -125 -14 0 -28 -4 -31 -10 -4 -6 13 -10 43 -10 84 0 150 -39 287 -169 39 -37 122 -108 185 -158 138 -109 160 -141 160 -236 0 -55 -6 -76 -39 -143 -74 -147 -144 -207 -241 -207 -180 0 -316 226 -404 675 -19 93 -36 172 -40 175 -15 15 -16 -10 -5 -93 l11 -89 -41 -150 c-97 -349 -69 -537 104 -710 192 -193 441 -239 920 -170 311 45 491 46 620 5 311 -99 514 -361 515 -665 0 -206 -73 -340 -208 -379 -61 -18 -754 -45 -807 -32 -44 11 -46 85 -4 127 11 11 18 23 15 26 -13 13 -64 -55 -71 -96 -7 -42 -8 -43 -39 -37 -126 24 -83 209 58 251 88 26 160 20 308 -28 41 -14 85 -6 46 8 -195 68 -273 153 -272 300 0 84 24 145 79 199 45 45 147 96 193 96 17 0 32 5 32 10 0 17 -66 11 -124 -11 -195 -73 -273 -306 -156 -467 40 -55 38 -62 -13 -62 -118 0 -239 -81 -253 -169 -7 -44 -4 -42 -99 -61 -125 -26 -537 -21 -564 5 -3 3 3 18 13 33 45 70 91 202 70 202 -5 0 -21 -33 -36 -73 -53 -139 -128 -207 -253 -227 -33 -5 -184 -10 -335 -10 -259 0 -281 -1 -375 -25 -116 -29 -200 -32 -233 -9 -33 23 -30 75 9 119 32 36 29 46 -7 20 -26 -18 -54 -74 -54 -109 0 -29 -1 -30 -52 -15 -94 26 -87 166 11 233 55 37 130 54 316 71 181 16 337 39 378 54 23 9 145 207 134 218 -6 5 -51 -60 -92 -132 -45 -77 -85 -87 -148 -36 -134 106 -186 236 -171 431 21 277 3 399 -89 594 -52 110 -71 125 -223 174 -213 70 -305 134 -363 255 -52 106 -51 113 8 120 102 12 197 89 186 151 l-7 33 92 11 c121 15 162 36 234 121 135 159 264 219 474 220 96 1 125 -3 189 -24z m2457 -1266 c53 -25 107 -142 127 -279 41 -280 -73 -564 -263 -659 -83 -42 -103 -41 -94 2 16 76 18 149 6 210 l-12 65 46 45 c103 104 141 232 132 451 -7 176 -2 192 58 165z m-2934 -686 c14 -26 49 -73 78 -104 77 -84 97 -74 -219 -104 -86 -8 -185 -24 -220 -35 -105 -32 -189 -121 -189 -198 0 -35 -22 -42 -131 -42 -86 0 -103 14 -96 77 3 27 14 54 28 70 l24 26 -23 -12 c-32 -17 -62 -69 -62 -108 0 -37 -8 -40 -50 -18 -100 52 -38 211 102 263 54 20 78 26 273 63 207 40 363 97 411 150 27 30 47 23 74 -28z M1506 3531 c-3 -5 8 -11 25 -15 17 -3 44 -20 60 -37 17 -19 29 -25 29 -17 0 36 -98 95 -114 69z M1431 3376 c-58 -32 -68 -110 -20 -150 40 -34 54 -33 95 8 44 44 46 86 5 127 -33 32 -45 35 -80 15z M1156 2930 c-16 -10 -47 -22 -68 -25 -22 -4 -35 -11 -32 -17 14 -22 144 26 144 53 0 13 -11 10 -44 -11z","left":[-1,-1,121,110,104,100,96,93,90,87,85,83,81,79,77,76,74,72,69,62,30,26,23,22,21,20,20,20,20,20,20,20,21,21,22,23,23,24,25,26,27,29,30,32,34,36,38,41,44,48,53,59,65,72,77,79,81,82,83,84,85,86,86,87,88,89,89,90,91,91,92,92,92,93,93,93,93,93,94,94,93,93,93,93,93,93,92,92,92,92,92,92,92,92,92,92,92,93,93,92,90,87,84,80,75,69,61,52,41,30,24,19,15,13,10,9,7,6,5,5,4,4,4,5,5,6,8,10,14,22,46,48,51,62,-1]},"missed":{"vb":[50,61,405,346],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1825 4126 c-232 -43 -430 -208 -522 -436 -45 -112 -49 -226 -13 -350 28 -97 5 -162 -108 -301 -122 -150 -126 -170 -46 -247 166 -161 346 -176 598 -50 259 129 330 58 361 -362 16 -212 29 -279 75 -372 l30 -60 0 -182 c0 -195 -16 -578 -25 -606 -3 -9 -27 -27 -54 -39 -95 -43 -155 -142 -131 -215 19 -58 72 -86 161 -86 37 0 54 -6 74 -24 38 -35 113 -49 241 -44 129 4 185 27 219 91 19 35 22 37 73 37 43 0 52 -3 52 -18 0 -28 28 -60 73 -85 58 -30 783 -40 871 -12 96 31 159 103 207 235 13 36 27 67 32 69 5 2 49 30 97 62 239 160 394 440 407 739 10 221 -45 370 -136 370 -55 0 -79 -43 -101 -176 -37 -223 -108 -392 -215 -512 -60 -67 -68 -66 -94 16 -80 246 -216 445 -541 792 -270 290 -486 555 -650 797 l-62 92 30 78 c65 167 80 298 43 378 -54 119 -367 325 -579 382 -192 50 -263 58 -367 39z m185 -40 c0 -8 -8 -21 -18 -28 -56 -40 -64 -86 -27 -158 34 -67 60 -167 90 -355 59 -357 161 -528 336 -560 85 -16 188 51 251 163 38 67 46 66 101 -17 151 -227 370 -495 652 -797 315 -336 442 -522 518 -759 107 -333 41 -691 -143 -774 -55 -24 -759 -30 -783 -6 -27 27 -10 105 25 118 7 2 10 7 6 11 -21 23 -78 -49 -78 -99 0 -54 -84 -20 -96 40 -32 173 194 266 413 169 72 -31 75 -14 4 29 -331 205 -247 737 117 743 92 2 100 5 76 25 -29 24 -130 16 -196 -15 -234 -111 -312 -415 -163 -636 44 -66 44 -70 -7 -70 -49 0 -149 71 -243 171 -64 70 -63 55 -30 279 29 202 29 200 10 200 -8 0 -15 -2 -15 -5 0 -33 -124 -814 -135 -851 -25 -85 -68 -112 -190 -121 -61 -4 -89 -2 -100 7 -24 20 -19 74 11 109 19 23 22 31 11 31 -29 0 -67 -58 -67 -102 l0 -41 -36 6 c-128 21 -86 206 56 248 22 7 46 19 54 28 21 24 36 198 36 426 l0 191 -51 54 c-192 204 -252 345 -269 630 -13 238 -35 327 -95 397 -71 83 -148 84 -307 5 -173 -86 -283 -102 -408 -59 -77 26 -83 40 -41 97 59 82 48 175 -24 201 -43 16 -43 18 1 75 80 106 91 154 61 286 -46 206 7 373 173 539 129 131 259 187 433 188 69 1 87 -2 87 -13z m275 -61 c139 -55 381 -219 437 -295 55 -76 44 -219 -34 -418 -84 -215 -164 -298 -284 -290 -163 10 -251 158 -314 524 -32 189 -60 299 -89 349 -83 144 72 215 284 130z m2112 -1830 c49 -34 82 -226 64 -374 -34 -279 -177 -527 -381 -664 -80 -54 -77 -59 -82 133 l-5 170 66 68 c117 120 201 308 237 536 22 137 47 169 101 131z m-2107 -377 c19 -24 57 -67 84 -96 l49 -53 -11 -272 c-14 -324 -11 -310 -69 -332 -82 -32 -152 -115 -153 -184 0 -23 -2 -23 -71 -19 -81 4 -99 18 -99 75 0 73 36 121 123 163 78 37 79 44 85 433 5 360 4 357 62 285z m598 -618 c89 -86 96 -102 53 -119 -39 -17 -97 -78 -116 -123 -14 -36 -18 -38 -61 -38 -45 0 -46 1 -41 28 3 15 16 96 28 180 19 120 27 152 39 152 8 -1 52 -36 98 -80z M1507 3615 c-37 -21 -26 -36 18 -22 26 7 45 7 76 -2 49 -15 60 -9 26 14 -36 23 -87 28 -120 10z M1565 3425 c-55 -54 14 -187 86 -168 68 18 58 130 -15 174 -39 24 -42 24 -71 -6z M1689 2913 c-6 -16 -20 -38 -31 -50 -32 -35 -12 -41 22 -7 31 31 50 84 31 84 -6 0 -16 -12 -22 -27z M1010 1383 c-159 -15 -271 -46 -308 -86 -20 -22 -152 -362 -152 -392 0 -28 71 -74 152 -100 270 -85 731 -71 932 30 92 46 93 49 17 276 -61 186 -63 190 -100 208 -105 54 -348 83 -541 64z m371 -48 c309 -46 169 -125 -226 -128 -440 -3 -585 92 -210 136 84 10 350 5 436 -8z m-587 -129 c179 -48 519 -49 687 0 105 30 96 38 151 -131 57 -178 57 -184 -19 -218 -222 -98 -763 -97 -963 1 -72 36 -73 43 -8 223 47 132 55 150 73 146 11 -3 47 -12 79 -21z","left":[-1,-1,138,126,120,115,111,108,105,102,100,97,95,93,92,90,88,87,86,84,83,82,81,80,79,79,78,77,77,76,76,76,75,75,75,75,76,76,76,76,77,77,78,78,79,79,79,79,79,78,77,76,75,73,72,70,69,67,65,64,62,60,59,58,57,57,57,57,58,60,62,64,67,69,73,77,82,92,156,156,156,157,157,157,158,158,158,158,158,158,158,159,159,159,159,159,159,159,159,160,160,160,161,161,162,162,163,164,165,166,166,168,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,168,168,168,168,168,168,42,31,25,21,19,17,16,16,15,14,13,13,12,11,10,10,9,8,8,7,6,5,5,4,4,4,6,8,11,16,22,30,45]},"failed":{"vb":[6,72,469,344],"tr":"translate(0.000000,480.000000) scale(0.100000,-0.100000)","d":"M1565 4016 c-173 -34 -301 -117 -398 -261 -61 -90 -49 -86 -247 -83 -259 4 -283 -19 -252 -239 24 -172 109 -237 330 -251 98 -6 101 -13 38 -80 -46 -48 -69 -63 -168 -106 -67 -29 -73 -47 -32 -96 52 -62 145 -93 309 -105 238 -18 271 -54 330 -361 50 -256 97 -385 188 -522 44 -64 59 -182 60 -467 1 -278 -5 -313 -57 -335 -140 -63 -203 -173 -154 -270 35 -70 75 -85 225 -86 122 -2 122 -2 153 -32 46 -47 89 -57 235 -57 286 0 323 61 405 650 11 83 23 164 25 181 l5 31 123 -5 c128 -5 332 15 437 43 87 23 91 22 135 -51 22 -36 70 -95 108 -131 66 -64 67 -66 66 -117 -2 -106 -19 -146 -68 -166 -161 -63 -213 -235 -88 -290 88 -39 273 -34 356 8 61 31 150 220 191 405 15 67 13 66 111 26 88 -35 89 -37 89 -164 l0 -73 -36 -12 c-115 -38 -186 -179 -131 -261 39 -60 83 -74 232 -74 241 0 292 47 345 321 42 217 30 314 -51 416 -83 104 -98 170 -75 332 22 148 20 241 -5 349 l-22 91 24 19 c246 194 358 374 390 627 31 249 -85 480 -213 427 -46 -19 -64 -62 -72 -170 -16 -198 -87 -373 -205 -499 -91 -97 -130 -119 -169 -95 -160 103 -325 145 -627 162 -521 29 -786 91 -966 225 -74 55 -89 82 -65 118 120 185 120 299 -1 520 -214 394 -492 569 -808 508z m258 -52 c87 -19 197 -71 197 -92 0 -8 -8 -21 -17 -28 -21 -14 -14 -18 48 -28 98 -17 251 -217 343 -448 66 -168 6 -327 -203 -533 -245 -241 -446 -123 -446 260 0 160 9 203 81 378 77 188 98 252 91 271 -10 26 -31 6 -47 -46 -7 -24 -36 -99 -66 -168 -103 -243 -132 -402 -100 -559 69 -338 284 -399 530 -149 62 62 93 88 102 82 7 -5 32 -26 56 -46 181 -153 417 -216 943 -253 279 -20 404 -37 495 -69 334 -116 495 -412 431 -796 -25 -153 -8 -229 79 -350 33 -45 63 -98 66 -118 17 -90 -30 -395 -74 -480 -34 -66 -58 -75 -192 -80 l-120 -4 0 47 c0 31 7 56 20 75 25 35 11 48 -18 17 -25 -26 -42 -69 -42 -103 0 -31 -50 -34 -80 -4 -56 56 -13 165 85 216 78 39 88 59 81 157 -9 125 -7 123 -178 201 -266 120 -463 364 -494 612 -7 57 -29 89 -40 59 -11 -27 2 -115 26 -180 39 -108 41 -105 -85 -147 -188 -63 -284 -79 -519 -85 l-209 -6 6 92 c4 50 10 109 13 131 5 32 3 41 -11 46 -26 10 -31 -6 -44 -144 -14 -144 -63 -516 -86 -655 -46 -275 -95 -327 -307 -327 l-98 0 0 49 c0 35 7 58 25 86 27 39 27 52 0 42 -24 -10 -54 -68 -61 -119 -8 -55 -31 -64 -77 -28 -80 63 -31 200 92 258 81 39 84 50 84 272 -1 285 -39 570 -76 570 -18 0 -19 -4 -13 -47 24 -165 21 -169 -69 -112 -210 133 -359 385 -415 704 -61 345 -114 421 -310 445 -44 6 -117 15 -162 20 -90 11 -191 53 -196 82 -2 11 18 26 70 51 96 46 147 92 186 165 42 79 35 85 -101 83 -193 -4 -297 53 -297 163 0 35 1 36 39 36 87 0 191 85 191 155 l0 33 74 4 c91 4 113 18 178 114 135 199 368 284 621 228z m-949 -334 c33 -12 33 -37 1 -52 -58 -26 -162 23 -113 53 18 12 81 11 112 -1z m3695 -439 c71 -71 100 -268 65 -439 -39 -191 -156 -379 -305 -488 -62 -45 -79 -44 -107 9 -12 24 -43 66 -67 94 -57 65 -57 69 14 125 153 122 257 338 280 578 5 54 14 108 20 119 15 28 73 29 100 2z m-2735 -1475 c57 -48 175 -126 192 -126 24 0 45 -334 30 -470 l-7 -65 -66 -35 c-79 -42 -121 -95 -131 -166 l-7 -49 -89 -3 -89 -3 5 57 c4 44 10 62 28 76 16 13 20 22 13 29 -17 17 -71 -54 -78 -106 -9 -54 -40 -62 -74 -19 -56 72 1 191 111 231 27 9 55 25 64 34 25 28 37 187 31 432 -4 160 -3 227 5 227 6 0 34 -20 62 -44z m1645 -111 c46 -73 171 -197 250 -248 l63 -41 -5 -41 c-9 -59 -54 -208 -89 -294 -55 -130 -87 -150 -245 -151 l-83 0 0 39 c0 27 8 49 25 69 26 32 24 47 -6 31 -25 -13 -49 -61 -49 -99 0 -25 -4 -30 -23 -30 -41 0 -67 27 -67 71 0 75 42 125 132 155 58 19 70 39 87 151 14 92 7 112 -73 188 -68 65 -141 166 -134 186 4 12 141 68 168 68 8 0 30 -24 49 -54z M1457 3803 c-13 -12 -7 -23 14 -23 11 0 34 -13 51 -30 33 -34 38 -36 38 -17 0 30 -86 88 -103 70z M1345 3615 c-31 -30 -32 -55 -2 -83 31 -29 61 -28 86 4 27 34 26 50 -4 79 -31 31 -49 31 -80 0z M181 3666 c-14 -17 -18 -15 152 -115 149 -87 152 -88 161 -66 4 11 -28 34 -117 86 -67 39 -136 80 -153 90 -26 16 -33 17 -43 5z M114 3249 c-16 -26 19 -33 159 -34 152 0 180 5 171 30 -8 19 -318 23 -330 4z M355 2919 c-158 -110 -160 -112 -143 -127 15 -12 293 175 293 198 0 28 -24 17 -150 -71z","left":[-1,-1,156,144,138,133,129,126,123,121,119,117,115,113,112,110,109,108,106,104,11,10,11,14,17,21,24,27,31,34,38,60,60,60,60,60,61,61,62,63,65,4,4,5,78,88,100,99,97,95,93,90,87,41,38,35,32,29,27,24,21,18,15,13,13,15,125,128,131,132,134,135,136,136,137,138,138,138,139,139,140,140,140,141,141,141,142,142,143,143,143,144,144,145,146,146,147,148,148,149,150,151,152,153,154,155,156,157,158,160,161,163,163,163,163,164,164,164,164,164,165,165,165,165,165,165,165,165,165,165,166,166,166,166,166,166,165,165,165,165,165,165,165,165,164,164,164,163,159,155,152,149,147,146,145,144,143,143,142,142,142,143,144,145,146,148,153,180,181,184,187,195]}};
-  const STATES = ['quiet', 'alert', 'missed', 'failed'];
-  const LABEL = {
-    quiet: 'Digs, asleep: all quiet',
-    alert: 'Digs, head up: something is running or due',
-    missed: 'Digs, puzzled: a run was missed',
-    failed: 'Digs, barking: something failed',
-  };
-  const phone = window.matchMedia('(max-width: 760px)');
-  const SCALE = () => phone.matches ? 0.38 : 0.5;
-  const stage = document.getElementById('digs');
-  const params = new URLSearchParams(location.search);
-  let state = STATES.includes(params.get('state')) ? params.get('state') : 'failed';
-  const listeners = [];
-  window.Digs = {
-    get state() { return state; },
-    get art() { return ART[state]; },
-    get scale() { return SCALE(); },
-    onChange(fn) { listeners.push(fn); },
-  };
-  function paint() {
-    const a = ART[state], s = SCALE();
-    const [x, y, w, h] = a.vb;
-    stage.innerHTML = '<svg viewBox="' + x + ' ' + y + ' ' + w + ' ' + h + '" width="' + Math.round(w * s) + '" height="' + Math.round(h * s) + '" aria-hidden="true"><g transform="' + a.tr + '"><path fill="currentColor" d="' + a.d + '"/></g></svg>';
-    stage.setAttribute('aria-label', LABEL[state]);
-    stage.dataset.state = state;
-  }
-  function set(s) {
-    state = s;
-    document.querySelectorAll('.preview button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.set === s)));
-    paint();
-    listeners.forEach(fn => fn());
-  }
-  document.querySelectorAll('.preview button').forEach(b => b.addEventListener('click', () => set(b.dataset.set)));
-  phone.addEventListener('change', () => { paint(); listeners.forEach(fn => fn()); });
-  set(state);
-})();
-</script>
-
-<script type="module">
-/* ---------- The verdict hugs Digs's outline: Pretext lays out each line at the width his drawing leaves. ---------- */
-const splash = document.querySelector('.splash');
-const host = document.querySelector('.splash-in');
-const para = document.getElementById('verdict');
-const stage = document.getElementById('digs');
-const phone = window.matchMedia('(max-width: 760px)');
-if (phone.matches) document.querySelector('.drawer').removeAttribute('open');
-
-const ITEMS = [
-  { text: 'Agent sync failed and has not run since.', font: '600 22px Rubik', weight: 600 },
-  { text: ' The other 59 jobs are fine: 16 daemons up, 34 scheduled jobs on time, and $2.31 of agent spend this month.', font: '400 22px Rubik', weight: 400 },
-];
-const LH = 32, GAP = 36, MIN = 360;
-function plain() { return '<strong>' + ITEMS[0].text + '</strong>' + ITEMS[1].text; }
-
-try {
-  const rich = await import('https://cdn.jsdelivr.net/npm/@chenglou/pretext/rich-inline/+esm');
-  await Promise.all(ITEMS.map(it => document.fonts.load(it.font, it.text)));
-  const prepared = rich.prepareRichInline(ITEMS.map(({ text, font }) => ({ text, font })));
-
-  function flow() {
-    if (phone.matches) { splash.classList.remove('flowing'); para.innerHTML = plain(); return; }
-    splash.classList.add('flowing');
-    const art = window.Digs.art, s = window.Digs.scale;
-    const W = host.clientWidth;
-    const hostBox = host.getBoundingClientRect(), box = stage.getBoundingClientRect();
-    const imgX = box.left - hostBox.left, imgY = box.top - hostBox.top;
-
-    const frag = document.createDocumentFragment();
-    let y = para.offsetTop, start, guard = 0;
-    while (guard++ < 40) {
-      // drawing rows covered by this text line; `left` holds the leftmost inked column every 2 source rows
-      let edge = Infinity;
-      const r0 = Math.max(0, Math.floor((y - imgY) / s / 2));
-      const r1 = Math.min(art.left.length - 1, Math.floor((y + LH - 1 - imgY) / s / 2));
-      for (let r = r0; r <= r1; r++) if (art.left[r] >= 0) edge = Math.min(edge, imgX + art.left[r] * s);
-      const avail = edge === Infinity ? W : Math.max(MIN, Math.min(W, edge - GAP));
-      const range = rich.layoutNextRichInlineLineRange(prepared, avail, start);
-      if (!range) break;
-      const line = rich.materializeRichInlineLineRange(prepared, range);
-      const div = document.createElement('div'); div.className = 'ln';
-      line.fragments.forEach(f => {
-        const el = document.createElement(ITEMS[f.itemIndex].weight === 600 ? 'b' : 'span');
-        el.textContent = (f.gapBefore > 0 ? ' ' : '') + f.text;
-        div.appendChild(el);
-      });
-      frag.appendChild(div);
-      start = range.end; y += LH;
-    }
-    para.replaceChildren(frag);
-  }
-
-  let raf = 0;
-  const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(flow); };
-  new ResizeObserver(schedule).observe(host);
-  window.Digs.onChange(schedule);
-  flow();
-} catch (e) {
-  // Pretext unavailable: the paragraph stays a normal paragraph beside Digs.
-}
-</script>
 </body>
 </html>
