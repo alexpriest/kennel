@@ -5,6 +5,20 @@ import { homedir } from 'node:os';
 import { promisify } from 'node:util';
 import type { Backend, Service, ServiceAction } from '../types.js';
 import { formatSchedule, type CalendarInterval } from '../schedule.js';
+import { confirmAction, isSelf, planLaunchdAction, type LaunchdSnapshot } from '../actions.js';
+import { readLaunchctlPrint, readPsTable, type PsRow } from '../probe.js';
+
+const PAST: Record<ServiceAction, string> = { start: 'Started', stop: 'Stopped', restart: 'Restarted' };
+
+/** True when pid is this process or one of its ancestors (e.g. a launcher wrapper around Kennel). */
+function isAncestorOfUs(table: Map<number, PsRow>, pid: number): boolean {
+  let current: number | undefined = process.pid;
+  for (let hops = 0; current && current > 1 && hops < 64; hops++) {
+    if (current === pid) return true;
+    current = table.get(current)?.ppid;
+  }
+  return false;
+}
 
 const execFileAsync = promisify(execFile);
 
@@ -121,27 +135,27 @@ export class LaunchdBackend implements Backend {
 
   async performAction(id: string, action: ServiceAction): Promise<{ success: boolean; message: string }> {
     const uid = process.getuid?.() ?? 501;
-    const target = `gui/${uid}/${id}`;
+    const domain = `gui/${uid}`;
+    const probe = async (): Promise<LaunchdSnapshot> => {
+      const printed = await readLaunchctlPrint(domain, id);
+      return { loaded: printed !== null, pid: printed?.pid ?? null, runs: printed?.runs ?? null };
+    };
+    const before = await probe();
+    const self = isSelf(id, before.pid, { label: process.env.XPC_SERVICE_NAME, pid: process.pid })
+      || (before.pid !== null && isAncestorOfUs(await readPsTable(), before.pid));
+    const plan = planLaunchdAction({ action, label: id, domain, plistPath: this.plistPathFor(id), snapshot: before, self });
+    if ('refuse' in plan) return { success: false, message: `${plan.refuse}: ${id}` };
 
     try {
-      if (action === 'stop') {
-        await execFileAsync('launchctl', ['bootout', `gui/${uid}`, this.plistPathFor(id)]);
-        return { success: true, message: `Stopped ${id}` };
-      }
-      if (action === 'start') {
-        await execFileAsync('launchctl', ['bootstrap', `gui/${uid}`, this.plistPathFor(id)]);
-        return { success: true, message: `Started ${id}` };
-      }
-      if (action === 'restart') {
-        try { await execFileAsync('launchctl', ['bootout', `gui/${uid}`, this.plistPathFor(id)]); } catch { /* may not be loaded */ }
-        await execFileAsync('launchctl', ['bootstrap', `gui/${uid}`, this.plistPathFor(id)]);
-        return { success: true, message: `Restarted ${id}` };
-      }
-      return { success: false, message: `Unknown action: ${action}` };
+      for (const step of plan.steps) await execFileAsync('launchctl', step);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, message: `Failed to ${action} ${id}: ${msg}` };
     }
+    const result = await confirmAction(plan.expect, probe, { attempts: 10, delayMs: 300, before });
+    return result.confirmed
+      ? { success: true, message: `${PAST[action]} ${id}` }
+      : { success: false, message: `Asked launchd to ${action} ${id}, but ${result.reason}` };
   }
 
   async getLogs(id: string, lines = 50): Promise<string> {
