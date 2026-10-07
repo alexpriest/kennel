@@ -7,7 +7,7 @@ Written 2026-10-07 by Kit at the end of the design session. Start here in a fres
 - **Approved prototype:** `docs/design/2026-10-redesign/kennel-today.html` (built from `app-template.html` + `jobs.json`; published privately at https://claude.ai/artifact/977tmwZuZC1VDXF36Wv56g). Alex: "i LOVE this!!!!" on round 11.
 - **Design history:** proposal + earlier rounds at https://claude.ai/artifact/8bGhqAxpiPrHKatLFdFZdZ; files in `docs/design/2026-10-redesign/`.
 - **Live today:** `com.alexpriest.kennel` serves the *old* Svelte UI at localhost:5544 (localhost-only), with the Scheduled panel added this week (`src/scheduled.ts`). Six agent tasks run locally via `~/Code/tools/scheduled-tasks/run_task.py` and write run state to `~/.local/state/scheduled-tasks/`.
-- **Linear:** project "Kennel", issues below.
+- **Linear:** project Kennel (https://linear.app/alexpriest/project/kennel-2516abdca10c). Umbrella ANT-992. Delegated: ANT-993 phase 1 data, ANT-994 other accounts' daemons, ANT-995 phase 2 UI port, ANT-996 calendar view, ANT-997 Settings + Ask Claude to fix, ANT-998 Digs pose pass + footer order, ANT-999 Tailscale. Backlog: ANT-1000 menu bar, ANT-1001 alerts decision (discuss), ANT-1002 Paloma login (Alex). Done: ANT-1003 scheduled tasks moved local.
 
 ## Design decisions Alex made (verbatim where it matters)
 
